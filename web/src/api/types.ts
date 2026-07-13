@@ -52,6 +52,11 @@ export interface CodesResponse {
   codes: CurrentCode[];
 }
 
+export interface TimedCodesResponse extends CodesResponse {
+  clockOffsetMs: number;
+  roundTripMs: number;
+}
+
 export interface Group {
   id: string;
   name: string;

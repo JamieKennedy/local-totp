@@ -3,6 +3,7 @@ import { api, setCSRF } from "./client";
 
 afterEach(() => {
   setCSRF(undefined);
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -51,5 +52,21 @@ describe("API client", () => {
       message: "Unlock the vault",
       status: 423,
     });
+  });
+
+  it("estimates a stable server clock offset at response time", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ serverTime: "1970-01-01T00:00:07.100Z", codes: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(Date, "now").mockReturnValueOnce(1_000).mockReturnValueOnce(1_200);
+
+    const response = await api.codes();
+
+    expect(response.clockOffsetMs).toBe(6_000);
+    expect(response.roundTripMs).toBe(200);
   });
 });
