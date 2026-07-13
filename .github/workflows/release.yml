@@ -75,14 +75,17 @@ jobs:
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          (cd release && sha256sum local-totp_* > SHA256SUMS)
+          (cd release && sha256sum local-totp_* local-totp-source.spdx.json > SHA256SUMS)
           awk -v version="$VERSION" '
             $0 ~ ("^## \\[" version "\\] - ") { capture = 1; next }
             capture && /^## \[/ { exit }
             capture { print }
           ' CHANGELOG.md > release-notes.md
           test -s release-notes.md
-      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+      # GitHub artifact attestations are unavailable for user-owned private repositories.
+      - name: Attest release artifacts
+        if: github.event.repository.visibility == 'public'
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: release/*
       - name: Publish private GitHub release
@@ -140,7 +143,11 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ needs.validate.outputs.version }}
-      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+      # Buildx publishes OCI provenance and an SBOM for private images above. The GitHub
+      # artifact-attestation API is used only when the repository is public.
+      - name: Attest container image
+        if: github.event.repository.visibility == 'public'
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-name: ${{ steps.image.outputs.image }}
           subject-digest: ${{ steps.build.outputs.digest }}

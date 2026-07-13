@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Allow private releases to publish when GitHub artifact attestations are unavailable, and
+  include the source SBOM in release checksums.
+
 ## [0.1.0] - 2026-07-13
 
 ### Added
