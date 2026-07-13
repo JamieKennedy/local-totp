@@ -8,6 +8,7 @@ import type {
   Group,
   SecretView,
   Status,
+  TimedCodesResponse,
 } from "./types";
 
 let csrfToken = "";
@@ -100,8 +101,15 @@ export const api = {
   revealSecret(id: string): Promise<SecretView> {
     return request<SecretView>(`/credentials/${id}/secret`);
   },
-  codes(): Promise<CodesResponse> {
-    return request<CodesResponse>("/codes");
+  async codes(): Promise<TimedCodesResponse> {
+    const requestedAt = Date.now();
+    const response = await request<CodesResponse>("/codes");
+    const receivedAt = Date.now();
+    return {
+      ...response,
+      clockOffsetMs: Date.parse(response.serverTime) - (requestedAt + receivedAt) / 2,
+      roundTripMs: receivedAt - requestedAt,
+    };
   },
   async groups(): Promise<Group[]> {
     return (await request<{ groups: Group[] }>("/groups")).groups;

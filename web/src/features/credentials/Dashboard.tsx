@@ -75,6 +75,8 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
     { id: "name", desc: false },
   ]);
   const groups = groupsQuery.data ?? noGroups;
+  const clockOffsetMs = codesQuery.data?.clockOffsetMs ?? 0;
+  const serverNow = now + clockOffsetMs;
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 250);
@@ -83,7 +85,10 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
   useEffect(() => {
     const expiries = (codesQuery.data?.codes ?? []).map((code) => Date.parse(code.validUntil));
     if (expiries.length === 0) return;
-    const delay = Math.max(100, Math.min(...expiries) - Date.now() + 100);
+    const delay = Math.max(
+      100,
+      Math.min(...expiries) - (Date.now() + (codesQuery.data?.clockOffsetMs ?? 0)) + 100,
+    );
     const timeout = window.setTimeout(
       () => void queryClient.invalidateQueries({ queryKey: ["codes"] }),
       delay,
@@ -195,7 +200,7 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
       {
         id: "code",
         header: "Current code",
-        cell: ({ row }) => <CodeCell code={codeMap.get(row.original.id)} now={now} />,
+        cell: ({ row }) => <CodeCell code={codeMap.get(row.original.id)} now={serverNow} />,
       },
       {
         id: "group",
@@ -267,7 +272,7 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
         ),
       },
     ],
-    [codeMap, deleteMutation, favoriteMutation, groupMap, now],
+    [codeMap, deleteMutation, favoriteMutation, groupMap, serverNow],
   );
   const table = useReactTable({
     data: filtered,
@@ -277,10 +282,10 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
-  const drift =
-    codesQuery.data === undefined
-      ? 0
-      : Math.abs(Date.parse(codesQuery.data.serverTime) - Date.now());
+  const confirmedClockSkew = Math.max(
+    0,
+    Math.abs(clockOffsetMs) - (codesQuery.data?.roundTripMs ?? 0) / 2,
+  );
 
   return (
     <main className="mx-auto min-h-svh w-full max-w-[1500px] p-4 sm:p-6">
@@ -299,7 +304,7 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
           Lock vault
         </Button>
       </header>
-      {drift > 5_000 && (
+      {confirmedClockSkew > 5_000 && (
         <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-600">
           Browser and server clocks differ by more than five seconds. Codes follow server time.
         </div>
@@ -400,7 +405,7 @@ export function Dashboard({ version, onLock }: { version: string; onLock: () => 
                         key={row.id}
                         credential={row.original}
                         code={codeMap.get(row.original.id)}
-                        now={now}
+                        now={serverNow}
                         group={
                           row.original.groupId === undefined
                             ? undefined
