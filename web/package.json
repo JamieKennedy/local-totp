@@ -15,7 +15,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "generate:api": "openapi-typescript ../api/openapi.json -o src/api/schema.d.ts",
+    "generate:api": "openapi-typescript ../api/openapi.json -o src/api/schema.d.ts && prettier --write src/api/schema.d.ts",
     "e2e": "playwright test"
   },
   "dependencies": {
