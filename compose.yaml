@@ -1,0 +1,24 @@
+services:
+  local-totp:
+    build:
+      context: .
+      args:
+        VERSION: dev
+    image: local-totp:dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - local-totp-data:/data
+    # Optional unattended unlock:
+    # environment:
+    #   LOCAL_TOTP_MASTER_PASSWORD_FILE: /run/secrets/master_password
+    # secrets:
+    #   - master_password
+
+volumes:
+  local-totp-data:
+
+# secrets:
+#   master_password:
+#     file: ./master-password.secret

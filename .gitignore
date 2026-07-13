@@ -1,0 +1,43 @@
+# Frontend dependencies and generated output
+node_modules/
+web/node_modules/
+web/dist/
+web/.vite/
+web/coverage/
+playwright-report/
+test-results/
+
+# Go and test output
+bin/
+/local-totp
+/local-totp.exe
+*.test
+*.out
+coverage/
+coverage*.txt
+*.prof
+internal/webui/dist/
+
+# Runtime data and secrets
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.ltotp
+.env
+.env.*
+!.env.example
+*.key
+*.secret
+*.log
+
+# Editors, operating systems, and temporary files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp

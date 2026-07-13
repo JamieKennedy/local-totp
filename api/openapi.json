@@ -1,0 +1,127 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Local TOTP HTTP Interface",
+    "version": "0.1.0",
+    "description": "Localhost-only management and read-only automation interface for test TOTP credentials."
+  },
+  "servers": [{ "url": "http://localhost:8080/api/v1" }],
+  "paths": {
+    "/status": {
+      "get": {
+        "operationId": "getStatus",
+        "responses": { "200": { "description": "Lifecycle status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Status" } } } } }
+      }
+    },
+    "/setup": {
+      "post": {
+        "operationId": "setupVault",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordInput" } } } },
+        "responses": { "201": { "description": "Vault created" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/session/unlock": {
+      "post": {
+        "operationId": "unlockVault",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordInput" } } } },
+        "responses": { "200": { "description": "Unlocked" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/session/lock": { "post": { "operationId": "lockVault", "responses": { "204": { "description": "Locked" } } } },
+    "/session/recover": { "post": { "operationId": "recoverVault", "responses": { "200": { "description": "Recovered with a rotated recovery key" } } } },
+    "/credentials": {
+      "get": {
+        "operationId": "listCredentials",
+        "security": [{ "session": [] }, { "bearer": [] }],
+        "responses": { "200": { "description": "Credential metadata", "content": { "application/json": { "schema": { "type": "object", "properties": { "credentials": { "type": "array", "items": { "$ref": "#/components/schemas/Credential" } } }, "required": ["credentials"] } } } } }
+      },
+      "post": {
+        "operationId": "createCredential",
+        "security": [{ "session": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CredentialInput" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credential" } } } } }
+      }
+    },
+    "/credentials/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/ID" }],
+      "patch": { "operationId": "updateCredential", "security": [{ "session": [] }], "responses": { "200": { "description": "Updated" } } },
+      "delete": { "operationId": "deleteCredential", "security": [{ "session": [] }], "responses": { "204": { "description": "Deleted" } } }
+    },
+    "/credentials/{id}/secret": {
+      "parameters": [{ "$ref": "#/components/parameters/ID" }],
+      "get": { "operationId": "revealCredentialSecret", "security": [{ "session": [] }], "responses": { "200": { "description": "Explicit seed reveal", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Secret" } } } } } }
+    },
+    "/credentials/{id}/code": {
+      "parameters": [{ "$ref": "#/components/parameters/ID" }],
+      "get": { "operationId": "getCredentialCode", "security": [{ "session": [] }, { "bearer": [] }], "responses": { "200": { "description": "Current code", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CurrentCode" } } } } } }
+    },
+    "/codes": {
+      "get": { "operationId": "getCodes", "security": [{ "session": [] }, { "bearer": [] }], "responses": { "200": { "description": "All current codes", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CodesResponse" } } } } } }
+    },
+    "/groups": {
+      "get": { "operationId": "listGroups", "security": [{ "session": [] }, { "bearer": [] }], "responses": { "200": { "description": "Groups" } } },
+      "post": { "operationId": "createGroup", "security": [{ "session": [] }], "responses": { "201": { "description": "Created" } } }
+    },
+    "/groups/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/ID" }],
+      "patch": { "operationId": "updateGroup", "security": [{ "session": [] }], "responses": { "200": { "description": "Updated" } } },
+      "delete": { "operationId": "deleteGroup", "security": [{ "session": [] }], "responses": { "204": { "description": "Deleted" } } }
+    },
+    "/settings/api-keys": {
+      "get": { "operationId": "listAPIKeys", "security": [{ "session": [] }], "responses": { "200": { "description": "Named keys" } } },
+      "post": { "operationId": "createAPIKey", "security": [{ "session": [] }], "responses": { "201": { "description": "Created; plaintext returned once" } } }
+    },
+    "/settings/api-keys/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/ID" }],
+      "delete": { "operationId": "deleteAPIKey", "security": [{ "session": [] }], "responses": { "204": { "description": "Revoked" } } }
+    },
+    "/settings/password": { "post": { "operationId": "changePassword", "security": [{ "session": [] }], "responses": { "204": { "description": "Changed" } } } },
+    "/settings/recovery/rotate": { "post": { "operationId": "rotateRecovery", "security": [{ "session": [] }], "responses": { "200": { "description": "Rotated" } } } },
+    "/backups/export": { "post": { "operationId": "exportBackup", "security": [{ "session": [] }], "responses": { "200": { "description": "Encrypted .ltotp file" } } } },
+    "/backups/preview": { "post": { "operationId": "previewBackup", "security": [{ "session": [] }], "responses": { "200": { "description": "Import preview" } } } },
+    "/backups/{id}/apply": {
+      "parameters": [{ "$ref": "#/components/parameters/ID" }],
+      "post": { "operationId": "applyBackup", "security": [{ "session": [] }], "responses": { "204": { "description": "Applied" } } }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": { "type": "apiKey", "in": "cookie", "name": "local_totp_session" },
+      "bearer": { "type": "http", "scheme": "bearer" }
+    },
+    "parameters": { "ID": { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } },
+    "responses": { "Error": { "description": "Error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } },
+    "schemas": {
+      "Status": {
+        "type": "object",
+        "properties": { "setup": { "type": "boolean" }, "locked": { "type": "boolean" }, "authenticated": { "type": "boolean" }, "csrfToken": { "type": "string" }, "version": { "type": "string" }, "testOnly": { "type": "boolean", "const": true } },
+        "required": ["setup", "locked", "authenticated", "version", "testOnly"]
+      },
+      "PasswordInput": { "type": "object", "properties": { "password": { "type": "string", "minLength": 12 } }, "required": ["password"] },
+      "CredentialInput": {
+        "type": "object",
+        "properties": {
+          "source": { "type": "string", "enum": ["manual", "uri", "generate"] }, "uri": { "type": "string" }, "issuer": { "type": "string" }, "account": { "type": "string" }, "secret": { "type": "string" },
+          "algorithm": { "$ref": "#/components/schemas/Algorithm" }, "digits": { "type": "integer", "minimum": 6, "maximum": 8 }, "period": { "type": "integer", "minimum": 5, "maximum": 300 },
+          "favorite": { "type": "boolean" }, "groupId": { "type": "string" }, "tags": { "type": "array", "items": { "type": "string" } }, "notes": { "type": "string" }
+        },
+        "required": ["source", "account", "algorithm", "digits", "period", "favorite", "tags", "notes"]
+      },
+      "Credential": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }, "issuer": { "type": "string" }, "account": { "type": "string" },
+          "algorithm": { "$ref": "#/components/schemas/Algorithm" }, "digits": { "type": "integer" }, "period": { "type": "integer" },
+          "favorite": { "type": "boolean" }, "groupId": { "type": "string" }, "tags": { "type": "array", "items": { "type": "string" } }, "notes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "issuer", "account", "algorithm", "digits", "period", "favorite", "tags", "notes", "createdAt", "updatedAt"]
+      },
+      "Algorithm": { "type": "string", "enum": ["SHA1", "SHA256", "SHA512"] },
+      "Secret": { "type": "object", "properties": { "secret": { "type": "string" }, "uri": { "type": "string" } }, "required": ["secret", "uri"] },
+      "CurrentCode": { "type": "object", "properties": { "credentialId": { "type": "string", "format": "uuid" }, "code": { "type": "string" }, "validFrom": { "type": "string", "format": "date-time" }, "validUntil": { "type": "string", "format": "date-time" } }, "required": ["credentialId", "code", "validFrom", "validUntil"] },
+      "CodesResponse": { "type": "object", "properties": { "serverTime": { "type": "string", "format": "date-time" }, "codes": { "type": "array", "items": { "$ref": "#/components/schemas/CurrentCode" } } }, "required": ["serverTime", "codes"] },
+      "Error": { "type": "object", "properties": { "error": { "type": "object", "properties": { "code": { "type": "string" }, "message": { "type": "string" }, "details": {} }, "required": ["code", "message"] } }, "required": ["error"] }
+    }
+  }
+}
