@@ -1,6 +1,6 @@
 const title = process.argv.slice(2).join(" ").trim();
 const conventional =
-  /^(feat|fix|docs|refactor|test|build|ci|chore|perf|revert)(\((api|vault|totp|storage|web|cli|docker|release)\))?!?: [a-z0-9][^.!?]*$/;
+  /^(feat|fix|docs|refactor|test|build|ci|chore|perf|revert)(\((api|vault|totp|storage|web|cli|docker|release)\))?!?: [a-z0-9](?:[^\r\n]*[^.!?\r\n])?$/;
 
 if (title.length === 0) {
   console.error("A pull request title is required.");
