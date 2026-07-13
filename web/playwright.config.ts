@@ -11,7 +11,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "../bin/local-totp serve",
+    command: "./bin/local-totp serve",
     cwd: "..",
     env: {
       LOCAL_TOTP_DATA_DIR: "./web/test-results/e2e-data",
