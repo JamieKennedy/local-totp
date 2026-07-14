@@ -1,16 +1,16 @@
 ---
 layout: ../../layouts/DocsLayout.astro
 title: Deploy the published container
-description: Run Local TOTP from its private GHCR release image with loopback networking, persistent storage, and optional unattended unlock.
+description: Run Local TOTP from its public GHCR release image with loopback networking, persistent storage, and optional unattended unlock.
 eyebrow: Deployment
 ---
 
 import Callout from "@/components/Callout.astro";
 
 <Callout title="Local deployment only" variant="security">
-  The HTTP server rejects non-loopback Host and Origin values. Do not expose
-  this container through a public interface, reverse proxy, ingress, or remote
-  hostname.
+  Host and Origin checks are defence in depth, not a network boundary. Publish
+  the container port only on host loopback. Do not expose it through a public
+  interface, reverse proxy, ingress, or remote hostname.
 </Callout>
 
 ## Image and access
@@ -21,14 +21,13 @@ Release tags publish Linux `amd64` and `arm64` images to:
 ghcr.io/jamiekennedy/local-totp:v<VERSION>
 ```
 
-The repository and package are currently private. Authenticate using a GitHub account or token with permission to read the package:
+The package is public and supports anonymous pulls:
 
 ```sh
-docker login ghcr.io --username <GITHUB_USERNAME>
 docker pull ghcr.io/jamiekennedy/local-totp:v<VERSION>
 ```
 
-When prompted for a password, provide a token with `read:packages` access. Prefer an exact `v<VERSION>` tag for reproducible deployments; the release workflow also publishes moving `latest`, major, and major/minor tags.
+Prefer an exact `v<VERSION>` tag or recorded digest for reproducible deployments; the release workflow also publishes moving `latest`, major, and major/minor tags.
 
 ## Run with Docker
 
@@ -128,6 +127,8 @@ To upgrade, pull a new exact release tag, update `image:`, and recreate the cont
 docker pull ghcr.io/jamiekennedy/local-totp:v<NEW_VERSION>
 docker compose up --detach
 ```
+
+Export an encrypted `.ltotp` backup or snapshot the stopped volume before upgrading. Storage migrations are forward-only: never run an older binary against a migrated database. Restore the pre-upgrade volume or backup if rollback is required.
 
 ## Storage and backup notes
 

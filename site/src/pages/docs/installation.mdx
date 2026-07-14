@@ -20,7 +20,7 @@ Choose either the release binary or the published container:
 
 - **Release binary:** a supported 64-bit Linux, macOS, or Windows machine, plus a browser for initial setup.
 - **Container:** Docker Engine with support for named volumes and loopback port publishing.
-- **Private distribution access:** GitHub authentication that can read the private repository; container users also need package access.
+- **Container image:** anonymous access to the public GHCR package; no registry login is required.
 - **Optional release tooling:** the [GitHub CLI](https://cli.github.com/) for authenticated downloads and a platform checksum utility.
 
 The published archives follow these exact patterns:
@@ -35,7 +35,7 @@ The published archives follow these exact patterns:
 
 </DocTable>
 
-Each release also contains `SHA256SUMS` and `local-totp-source.spdx.json`.
+Each release also contains `SHA256SUMS`, `local-totp-source.spdx.json`, `LICENSE`, `NOTICE`, and third-party notices.
 
 ## Install a release binary
 
@@ -57,11 +57,11 @@ The server accepts three environment variables:
 
 <DocTable label="Server environment variables" width="wide">
 
-| Variable                          | Binary default | Container default | Purpose                                                    |
-| --------------------------------- | -------------- | ----------------- | ---------------------------------------------------------- |
-| `LOCAL_TOTP_LISTEN_ADDR`          | `:8080`        | `:8080`           | HTTP listen address. Keep access on loopback.              |
-| `LOCAL_TOTP_DATA_DIR`             | `./data`       | `/data`           | Directory containing `local-totp.db`.                      |
-| `LOCAL_TOTP_MASTER_PASSWORD_FILE` | unset          | unset             | Optional file used to unlock an existing vault at startup. |
+| Variable                          | Binary default   | Container default | Purpose                                                    |
+| --------------------------------- | ---------------- | ----------------- | ---------------------------------------------------------- |
+| `LOCAL_TOTP_LISTEN_ADDR`          | `127.0.0.1:8080` | `:8080`           | HTTP listen address. Keep access on loopback.              |
+| `LOCAL_TOTP_DATA_DIR`             | `./data`         | `/data`           | Directory containing `local-totp.db`.                      |
+| `LOCAL_TOTP_MASTER_PASSWORD_FILE` | unset            | unset             | Optional file used to unlock an existing vault at startup. |
 
 </DocTable>
 
@@ -93,6 +93,8 @@ local-totp serve
 4. Add only clearly synthetic test or staging credentials.
 
 Initial setup is interactive. `LOCAL_TOTP_MASTER_PASSWORD_FILE` does **not** create a vault; it only attempts to unlock a vault that has already been set up and is locked.
+
+Local TOTP sends no telemetry and has no cloud service. The browser communicates only with the loopback server you opened.
 
 ## Verify the installation
 

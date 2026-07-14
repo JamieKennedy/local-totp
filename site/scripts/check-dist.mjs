@@ -12,6 +12,17 @@ const expectedFiles = [
   ".nojekyll",
   "404.html",
   "index.html",
+  "robots.txt",
+  "sitemap.xml",
+  "site.webmanifest",
+  "social-card.png",
+  "favicon-32.png",
+  "apple-touch-icon.png",
+  "icon-192.png",
+  "icon-512.png",
+  "LICENSE.txt",
+  "NOTICE.txt",
+  "THIRD_PARTY_NOTICES.txt",
   "openapi.json",
   "docs/installation/index.html",
   "docs/deployment/index.html",
@@ -57,6 +68,12 @@ for (const file of htmlFiles) {
     throw new Error(`${displayName}: missing Open Graph title`);
   if (!html.includes('name="twitter:card"'))
     throw new Error(`${displayName}: missing Twitter metadata`);
+  if (!html.includes('rel="manifest"'))
+    throw new Error(`${displayName}: missing web manifest`);
+  if (!html.includes('rel="apple-touch-icon"'))
+    throw new Error(`${displayName}: missing touch icon`);
+  if (!html.includes("social-card.png"))
+    throw new Error(`${displayName}: social preview must use the PNG asset`);
 
   const attributes = html.matchAll(/(?:href|src)="([^"]+)"/g);
   for (const match of attributes) {
@@ -111,6 +128,9 @@ if (styledGitHubLinks.length < 2) {
 }
 
 const notFoundHTML = htmlByName.get("404.html");
+if (!notFoundHTML.includes('name="robots" content="noindex,nofollow"')) {
+  throw new Error("404.html: missing noindex,nofollow metadata");
+}
 const returnHome = anchorsFor(notFoundHTML, basePath).find((tag) =>
   hasClasses(tag, ["inline-flex", "bg-primary"]),
 );
@@ -142,6 +162,49 @@ if (JSON.stringify(sourceOpenAPI) !== JSON.stringify(builtOpenAPI)) {
   throw new Error("dist/openapi.json differs from canonical api/openapi.json");
 }
 
+const robots = await readFile(join(outputRoot, "robots.txt"), "utf8");
+if (!robots.includes(`${canonicalOrigin}${basePath}sitemap.xml`)) {
+  throw new Error("robots.txt: missing canonical sitemap URL");
+}
+
+const sitemap = await readFile(join(outputRoot, "sitemap.xml"), "utf8");
+for (const path of [
+  "",
+  "docs/installation/",
+  "docs/deployment/",
+  "docs/cli/",
+  "docs/api/",
+]) {
+  if (!sitemap.includes(`${canonicalOrigin}${basePath}${path}`)) {
+    throw new Error(`sitemap.xml: missing ${path || "home"}`);
+  }
+}
+
+const textFiles = [
+  ...htmlByName.entries(),
+  ["openapi.json", await readFile(join(outputRoot, "openapi.json"), "utf8")],
+  ["robots.txt", robots],
+  ["sitemap.xml", sitemap],
+];
+const forbidden = [
+  [/C:\\\\Users\\\\/i, "Windows user path"],
+  [/\/(?:Users|home)\/[^/\s]+\//i, "local home path"],
+  [/localhost:(?:3000|4321|5173)/i, "development server URL"],
+  [
+    /currently private|private GHCR|private repository/i,
+    "stale private-release wording",
+  ],
+  [
+    /(?:BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|gh[pousr]_[A-Za-z0-9]{20,})/,
+    "credential material",
+  ],
+];
+for (const [name, contents] of textFiles) {
+  for (const [pattern, label] of forbidden) {
+    if (pattern.test(contents)) throw new Error(`${name}: contains ${label}`);
+  }
+}
+
 console.log(
-  `Verified ${htmlFiles.length} HTML files, internal paths, metadata, and OpenAPI output.`,
+  `Verified ${htmlFiles.length} HTML files, routes, metadata, sensitive-content rules, and OpenAPI output.`,
 );

@@ -14,7 +14,7 @@ interface Props {
 const {
   title,
   description,
-  image = withBase("social-card.svg"),
+  image = withBase("social-card.png"),
   noindex = false,
 } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -28,7 +28,7 @@ const imageURL = new URL(image, Astro.site);
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
-    {noindex && <meta name="robots" content="noindex" />}
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
     <meta
       name="theme-color"
       content="#10211f"
@@ -41,12 +41,18 @@ const imageURL = new URL(image, Astro.site);
     />
     {!noindex && <link rel="canonical" href={canonicalURL} />}
     <link rel="icon" href={withBase("favicon.svg")} type="image/svg+xml" />
+    <link rel="icon" href={withBase("favicon-32.png")} sizes="32x32" />
+    <link rel="apple-touch-icon" href={withBase("apple-touch-icon.png")} />
+    <link rel="manifest" href={withBase("site.webmanifest")} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Local TOTP" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={imageURL} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Local TOTP documentation" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -57,7 +63,7 @@ const imageURL = new URL(image, Astro.site);
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <SiteHeader />
-    <main id="main-content"><slot /></main>
+    <main id="main-content" tabindex="-1"><slot /></main>
     <SiteFooter />
   </body>
 </html>

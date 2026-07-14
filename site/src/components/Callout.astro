@@ -15,7 +15,8 @@ const Icon =
       : Info;
 ---
 
-<aside
+<div
+  role="note"
   class:list={[
     "not-prose my-6 grid grid-cols-[auto_1fr] gap-3 rounded-xl border p-4",
     variant === "warning" && "border-warning/35 bg-warning/8",
@@ -36,4 +37,4 @@ const Icon =
     <p class="font-semibold">{title}</p>
     <div class="text-muted-foreground mt-1 text-sm leading-6"><slot /></div>
   </div>
-</aside>
+</div>

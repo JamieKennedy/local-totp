@@ -44,10 +44,15 @@ const year = new Date().getUTCFullYear();
         <li>
           <a href={`${githubURL}/blob/main/SECURITY.md`}>Security policy</a>
         </li>
+        <li><a href={withBase("LICENSE.txt")}>Apache-2.0 licence</a></li>
+        <li>
+          <a href={withBase("THIRD_PARTY_NOTICES.txt")}>Third-party notices</a>
+        </li>
       </ul>
     </div>
   </div>
   <div class="text-muted-foreground border-t px-4 py-5 text-center text-xs">
-    © {year} Local TOTP. Use only with synthetic test and staging credentials.
+    © {year} Jamie Kennedy. Apache-2.0. Use only with synthetic test and staging
+    credentials.
   </div>
 </footer>
