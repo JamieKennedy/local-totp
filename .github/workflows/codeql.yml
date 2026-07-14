@@ -14,7 +14,7 @@ permissions: {}
 jobs:
   go:
     if: github.event.repository.visibility == 'public'
-    name: go
+    name: codeql / go
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -34,7 +34,7 @@ jobs:
 
   javascript-typescript:
     if: github.event.repository.visibility == 'public'
-    name: javascript-typescript
+    name: codeql / javascript-typescript
     runs-on: ubuntu-latest
     permissions:
       actions: read
