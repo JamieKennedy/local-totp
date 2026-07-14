@@ -80,10 +80,10 @@ Bearer keys can access only credential metadata, groups, and current-code reads.
 <EndpointTable />
 
 <Callout title="Canonical contract scope">
-  `api/openapi.json` is canonical. Some management operations currently have
-  intentionally sparse body or response schemas in that document; detailed
-  examples here focus on the fully described read interface and shared
-  authentication rules rather than inventing missing contract detail.
+  `api/openapi.json` is canonical and describes every v1 request, success
+  response, authentication requirement, and shared error envelope. Additive
+  fields and endpoints may arrive in 1.x; incompatible changes require a new API
+  version and major release.
 </Callout>
 
 ## Common formats
