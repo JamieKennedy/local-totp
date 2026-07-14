@@ -1,0 +1,79 @@
+---
+import DocTable from "@/components/DocTable.astro";
+
+const operations = [
+  ["GET", "/status", "Public", "Lifecycle and version status"],
+  ["POST", "/setup", "Public", "Create the vault and session"],
+  ["POST", "/session/unlock", "Public", "Unlock and create a session"],
+  ["POST", "/session/lock", "Session + CSRF", "Lock and revoke sessions"],
+  ["POST", "/session/recover", "Public", "Recover and rotate the recovery key"],
+  ["GET", "/credentials", "Session or bearer", "List credential metadata"],
+  ["POST", "/credentials", "Session + CSRF", "Create a credential"],
+  ["PATCH", "/credentials/{id}", "Session + CSRF", "Update a credential"],
+  ["DELETE", "/credentials/{id}", "Session + CSRF", "Delete a credential"],
+  ["GET", "/credentials/{id}/secret", "Session", "Explicitly reveal a seed"],
+  [
+    "GET",
+    "/credentials/{id}/code",
+    "Session or bearer",
+    "Read one current code",
+  ],
+  ["GET", "/codes", "Session or bearer", "Read all current codes"],
+  ["GET", "/groups", "Session or bearer", "List groups"],
+  ["POST", "/groups", "Session + CSRF", "Create a group"],
+  ["PATCH", "/groups/{id}", "Session + CSRF", "Update a group"],
+  ["DELETE", "/groups/{id}", "Session + CSRF", "Delete a group"],
+  ["GET", "/settings/api-keys", "Session", "List named API keys"],
+  [
+    "POST",
+    "/settings/api-keys",
+    "Session + CSRF",
+    "Create a read-only API key",
+  ],
+  ["DELETE", "/settings/api-keys/{id}", "Session + CSRF", "Revoke an API key"],
+  [
+    "POST",
+    "/settings/password",
+    "Session + CSRF",
+    "Change the master password",
+  ],
+  [
+    "POST",
+    "/settings/recovery/rotate",
+    "Session + CSRF",
+    "Rotate the recovery key",
+  ],
+  ["POST", "/backups/export", "Session + CSRF", "Export an encrypted backup"],
+  ["POST", "/backups/preview", "Session + CSRF", "Preview an uploaded backup"],
+  ["POST", "/backups/{id}/apply", "Session + CSRF", "Apply a previewed backup"],
+] as const;
+---
+
+<DocTable label="HTTP API endpoint matrix" width="wide">
+  <table>
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Path</th>
+        <th>Authentication</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        operations.map(([method, path, authentication, purpose]) => (
+          <tr>
+            <td>
+              <span class="bg-secondary rounded-md px-2 py-1 font-mono text-xs font-semibold">
+                {method}
+              </span>
+            </td>
+            <td class="font-mono text-xs">{path}</td>
+            <td>{authentication}</td>
+            <td>{purpose}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</DocTable>

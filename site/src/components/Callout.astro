@@ -1,0 +1,39 @@
+---
+import { Info, ShieldAlert, TriangleAlert } from "lucide-react";
+
+interface Props {
+  title: string;
+  variant?: "info" | "warning" | "security";
+}
+
+const { title, variant = "info" } = Astro.props;
+const Icon =
+  variant === "warning"
+    ? TriangleAlert
+    : variant === "security"
+      ? ShieldAlert
+      : Info;
+---
+
+<aside
+  class:list={[
+    "not-prose my-6 grid grid-cols-[auto_1fr] gap-3 rounded-xl border p-4",
+    variant === "warning" && "border-warning/35 bg-warning/8",
+    variant === "security" && "border-destructive/35 bg-destructive/8",
+    variant === "info" && "border-primary/30 bg-primary/8",
+  ]}
+>
+  <Icon
+    class:list={[
+      "mt-0.5 size-5",
+      variant === "warning" && "text-warning",
+      variant === "security" && "text-destructive",
+      variant === "info" && "text-primary",
+    ]}
+    aria-hidden="true"
+  />
+  <div>
+    <p class="font-semibold">{title}</p>
+    <div class="text-muted-foreground mt-1 text-sm leading-6"><slot /></div>
+  </div>
+</aside>

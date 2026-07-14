@@ -9,6 +9,7 @@ Local TOTP is a single-process system with an embedded React interface, a versio
 - `internal/application` owns workflows and coordinates `vault` with `totp`.
 - `internal/httpapi` and `internal/cli` are adapters. They validate transport input and translate results; they do not own business rules.
 - `web/src/features` contains feature modules. `web/src/api` is the only frontend module allowed to perform HTTP requests. TanStack Query owns server state and invalidation, TanStack Form owns form state/validation, and TanStack Table owns the credential grid. shadcn components copied under `web/src/components/ui` form the local interface seam over Radix and Tailwind CSS.
+- `site` is the independent static Astro landing and documentation site. It has no runtime dependency on the application, keeps its own shadcn primitives, and publishes the canonical `api/openapi.json` at build time without duplicating its source.
 
 Dependency direction is `cmd -> adapters -> application -> vault/totp`. Lower modules never import adapters.
 

@@ -1,0 +1,137 @@
+---
+layout: ../../layouts/DocsLayout.astro
+title: Deploy the published container
+description: Run Local TOTP from its private GHCR release image with loopback networking, persistent storage, and optional unattended unlock.
+eyebrow: Deployment
+---
+
+import Callout from "@/components/Callout.astro";
+
+<Callout title="Local deployment only" variant="security">
+  The HTTP server rejects non-loopback Host and Origin values. Do not expose
+  this container through a public interface, reverse proxy, ingress, or remote
+  hostname.
+</Callout>
+
+## Image and access
+
+Release tags publish Linux `amd64` and `arm64` images to:
+
+```text
+ghcr.io/jamiekennedy/local-totp:v<VERSION>
+```
+
+The repository and package are currently private. Authenticate using a GitHub account or token with permission to read the package:
+
+```sh
+docker login ghcr.io --username <GITHUB_USERNAME>
+docker pull ghcr.io/jamiekennedy/local-totp:v<VERSION>
+```
+
+When prompted for a password, provide a token with `read:packages` access. Prefer an exact `v<VERSION>` tag for reproducible deployments; the release workflow also publishes moving `latest`, major, and major/minor tags.
+
+## Run with Docker
+
+Create a named volume so Docker manages permissions for the non-root container user:
+
+```sh
+docker volume create local-totp-data
+docker run --detach \
+  --name local-totp \
+  --restart unless-stopped \
+  --publish "127.0.0.1:<HOST_PORT>:8080" \
+  --volume local-totp-data:/data \
+  ghcr.io/jamiekennedy/local-totp:v<VERSION>
+```
+
+Replace `<HOST_PORT>` with a free local port such as `8080`, then open `http://localhost:<HOST_PORT>`. The image runs as UID/GID `65532`, stores its database under `/data`, exposes container port `8080`, and contains no shell.
+
+## Run with Docker Compose
+
+Save the following as a local Compose file after replacing the placeholders. It intentionally contains `image:`, never `build:`.
+
+```yaml
+services:
+  local-totp:
+    image: ghcr.io/jamiekennedy/local-totp:v<VERSION>
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:<HOST_PORT>:8080"
+    volumes:
+      - local-totp-data:/data
+
+volumes:
+  local-totp-data:
+```
+
+Start it with:
+
+```sh
+docker compose up --detach
+```
+
+The repository's root `compose.yaml` is for development and builds from source. Use the release-image configuration above for deployment.
+
+## Optional unattended unlock
+
+Complete browser setup first. Then create a user-readable file outside the repository containing the same master password and mount it read-only. Never put the password directly in the Compose file or an environment variable.
+
+```yaml
+services:
+  local-totp:
+    image: ghcr.io/jamiekennedy/local-totp:v<VERSION>
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:<HOST_PORT>:8080"
+    volumes:
+      - local-totp-data:/data
+    environment:
+      LOCAL_TOTP_MASTER_PASSWORD_FILE: /run/secrets/master_password
+    secrets:
+      - master_password
+
+volumes:
+  local-totp-data:
+
+secrets:
+  master_password:
+    file: <HOST_MASTER_PASSWORD_FILE>
+```
+
+On startup, the server reads the file only when the vault is already set up and locked. If reading or unlocking fails, it logs a redacted warning and leaves the vault locked.
+
+<Callout title="Understand unattended unlock" variant="warning">
+  A mounted password allows anyone with equivalent container or host privileges
+  to unlock the vault. It improves restart automation, not the threat model.
+</Callout>
+
+## Verify and operate
+
+Check health from the host:
+
+```sh
+curl --fail http://localhost:<HOST_PORT>/healthz
+docker container inspect --format '{{.State.Status}}' local-totp
+```
+
+View structured server events when troubleshooting:
+
+```sh
+docker logs local-totp
+```
+
+The application redacts secret values, but treat logs as operational data and never add secrets to command arguments or labels.
+
+To upgrade, pull a new exact release tag, update `image:`, and recreate the container. Keep the same named volume:
+
+```sh
+docker pull ghcr.io/jamiekennedy/local-totp:v<NEW_VERSION>
+docker compose up --detach
+```
+
+## Storage and backup notes
+
+- Prefer the named `/data` volume; host bind mounts must be writable by UID/GID `65532`.
+- Do not copy `local-totp.db` while treating it as a portable backup format.
+- Use the authenticated web interface to export an encrypted `.ltotp` backup.
+- Store backup passwords separately from backup files.

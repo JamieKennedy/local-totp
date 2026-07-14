@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Local TOTP</title>
+  <desc id="desc">Localhost-only TOTP workbench for test and staging credentials</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1b24"/>
+      <stop offset="1" stop-color="#12302c"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#50c9a1" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#50c9a1" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <circle cx="1010" cy="80" r="430" fill="url(#glow)"/>
+  <circle cx="1120" cy="530" r="260" fill="none" stroke="#50c9a1" stroke-opacity=".12" stroke-width="2"/>
+  <circle cx="1120" cy="530" r="190" fill="none" stroke="#50c9a1" stroke-opacity=".16" stroke-width="2"/>
+  <g transform="translate(92 92)">
+    <rect width="86" height="86" rx="26" fill="#50c9a1"/>
+    <path d="M43 20 64 28v16c0 14-8 22-21 27-13-5-21-13-21-27V28l21-8Z" fill="none" stroke="#10211f" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="43" cy="42" r="5" fill="#10211f"/>
+    <path d="M43 47v10" stroke="#10211f" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <text x="92" y="280" fill="#f1faf7" font-family="Inter,Segoe UI,sans-serif" font-size="76" font-weight="700" letter-spacing="-2">Local TOTP</text>
+  <text x="94" y="350" fill="#aebfba" font-family="Inter,Segoe UI,sans-serif" font-size="32">Test credentials, safely separated.</text>
+  <g transform="translate(94 422)">
+    <rect width="570" height="72" rx="18" fill="#182c33" stroke="#35514f"/>
+    <circle cx="38" cy="36" r="8" fill="#50c9a1"/>
+    <text x="66" y="45" fill="#d8e9e4" font-family="Cascadia Code,Consolas,monospace" font-size="25">localhost · encrypted · scriptable</text>
+  </g>
+</svg>

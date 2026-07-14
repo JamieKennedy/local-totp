@@ -14,6 +14,13 @@ updates:
     groups:
       frontend:
         patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    groups:
+      documentation-site:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /
     schedule:

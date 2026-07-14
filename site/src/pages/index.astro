@@ -1,0 +1,307 @@
+---
+import {
+  ArrowRight,
+  Boxes,
+  Container,
+  KeyRound,
+  LockKeyhole,
+  ShieldCheck,
+  Terminal,
+} from "lucide-react";
+import { GitHubLogo } from "@/components/GitHubLogo";
+import LogoMark from "@/components/LogoMark.astro";
+import LinkButton from "@/components/ui/LinkButton.astro";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { documentationNavigation, githubURL } from "@/lib/navigation";
+import { withBase } from "@/lib/paths";
+
+const features = [
+  {
+    icon: LockKeyhole,
+    title: "Encrypted local vault",
+    description:
+      "Credential and group records are encrypted independently in a local SQLite database.",
+  },
+  {
+    icon: KeyRound,
+    title: "Test TOTP workflows",
+    description:
+      "Create, import, group, and inspect synthetic SHA-1, SHA-256, and SHA-512 credentials.",
+  },
+  {
+    icon: Terminal,
+    title: "Script-friendly access",
+    description:
+      "Use a read-only CLI or bearer key without exposing seed material to automation.",
+  },
+  {
+    icon: Container,
+    title: "One release image",
+    description:
+      "Run the non-root published container with a named volume and loopback-only port binding.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Session security",
+    description:
+      "HttpOnly cookies, CSRF checks, rate-limited login attempts, and strict loopback validation.",
+  },
+  {
+    icon: Boxes,
+    title: "Portable recovery",
+    description:
+      "Rotate recovery keys and move synthetic data through encrypted .ltotp backups.",
+  },
+];
+---
+
+<BaseLayout
+  title="Local TOTP — Test credentials, safely separated"
+  description="A localhost-only TOTP workbench for synthetic test and staging credentials, with an encrypted vault, dashboard, API, and CLI."
+>
+  <section class="relative overflow-hidden border-b">
+    <div class="hero-grid absolute inset-0 -z-10 opacity-70" aria-hidden="true">
+    </div>
+    <div
+      class="mx-auto grid max-w-7xl gap-14 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-8 lg:py-32"
+    >
+      <div>
+        <Badge variant="secondary" className="gap-2 px-3 py-1">
+          <span class="bg-primary size-1.5 rounded-full"></span>
+          Localhost-only developer workbench
+        </Badge>
+        <h1
+          class="mt-7 max-w-3xl text-5xl leading-[1.04] font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl"
+        >
+          Test credentials,<br /><span class="text-primary"
+            >safely separated.</span
+          >
+        </h1>
+        <p
+          class="text-muted-foreground mt-7 max-w-2xl text-lg leading-8 sm:text-xl"
+        >
+          Keep disposable development accounts out of your personal
+          authenticator. Local TOTP gives teams an encrypted dashboard,
+          read-only API, and script-friendly CLI on a trusted machine.
+        </p>
+        <div
+          class="mt-9 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"
+        >
+          <LinkButton
+            href={withBase("docs/installation/")}
+            size="lg"
+            class="w-full sm:w-auto"
+          >
+            Install Local TOTP <ArrowRight aria-hidden="true" />
+          </LinkButton>
+          <LinkButton
+            href={githubURL}
+            variant="outline"
+            size="lg"
+            class="w-full sm:w-auto"
+          >
+            <GitHubLogo /> View on GitHub
+          </LinkButton>
+        </div>
+      </div>
+      <div class="relative mx-auto w-full max-w-xl">
+        <div
+          class="bg-card overflow-hidden rounded-2xl border shadow-2xl shadow-black/15"
+        >
+          <div class="bg-muted/60 flex items-center gap-2 border-b px-5 py-4">
+            <LogoMark class="size-7" />
+            <span class="text-sm font-semibold">Credential workbench</span>
+            <Badge variant="outline" className="ml-auto">Vault unlocked</Badge>
+          </div>
+          <div class="space-y-3 p-5">
+            <div
+              class="bg-background grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-xl border p-4"
+            >
+              <div
+                class="bg-primary/12 text-primary flex size-10 items-center justify-center rounded-lg font-mono text-sm"
+              >
+                EX
+              </div>
+              <div class="min-w-0">
+                <p class="truncate font-semibold">Example staging</p>
+                <p class="text-muted-foreground truncate text-sm">
+                  developer@example.test
+                </p>
+              </div>
+              <Badge variant="secondary">Synthetic</Badge>
+            </div>
+            <div
+              class="bg-background grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-xl border p-4"
+            >
+              <div
+                class="bg-secondary flex size-10 items-center justify-center rounded-lg font-mono text-sm"
+              >
+                CI
+              </div>
+              <div class="min-w-0">
+                <p class="truncate font-semibold">Automation account</p>
+                <p class="text-muted-foreground truncate text-sm">
+                  pipeline@staging.test
+                </p>
+              </div>
+              <Badge variant="outline">Read only</Badge>
+            </div>
+            <div class="grid gap-3 pt-2 sm:grid-cols-3">
+              <div class="bg-muted/60 rounded-lg p-3">
+                <p class="text-muted-foreground text-xs">Storage</p><p
+                  class="mt-1 text-sm font-semibold"
+                >
+                  Encrypted SQLite
+                </p>
+              </div>
+              <div class="bg-muted/60 rounded-lg p-3">
+                <p class="text-muted-foreground text-xs">Interface</p><p
+                  class="mt-1 text-sm font-semibold"
+                >
+                  HTTP v1
+                </p>
+              </div>
+              <div class="bg-muted/60 rounded-lg p-3">
+                <p class="text-muted-foreground text-xs">Exposure</p><p
+                  class="mt-1 text-sm font-semibold"
+                >
+                  Loopback
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-primary/15 absolute -right-16 -bottom-20 -z-10 size-72 rounded-full blur-3xl"
+          aria-hidden="true"
+        >
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="border-b">
+    <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+      <div class="max-w-2xl">
+        <p class="text-primary text-sm font-semibold tracking-wider uppercase">
+          Built for development
+        </p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          The useful parts of an authenticator, scoped to test data.
+        </h2>
+        <p class="text-muted-foreground mt-4 text-lg leading-8">
+          For developers, QA engineers, and automation working with disposable
+          accounts on trusted local machines.
+        </p>
+      </div>
+      <div class="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {
+          features.map(({ icon: Icon, title, description }) => (
+            <Card className="h-full">
+              <CardHeader>
+                <div class="bg-primary/12 text-primary mb-3 flex size-10 items-center justify-center rounded-lg">
+                  <Icon className="size-5" aria-hidden="true" />
+                </div>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription className="leading-6">
+                  {description}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-muted/35 border-b">
+    <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+      <div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
+        <div>
+          <p
+            class="text-primary text-sm font-semibold tracking-wider uppercase"
+          >
+            Documentation
+          </p>
+          <h2 class="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            From first run to automation.
+          </h2>
+          <p class="text-muted-foreground mt-4 max-w-lg leading-7">
+            Every example follows the published release artifacts and the
+            current CLI and HTTP implementation.
+          </p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          {
+            documentationNavigation.map((item, index) => (
+              <a
+                href={item.href}
+                class="bg-card group rounded-xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <span class="text-primary text-xs font-semibold">
+                  0{index + 1}
+                </span>
+                <h3 class="mt-3 font-semibold">{item.label}</h3>
+                <p class="text-muted-foreground mt-2 text-sm leading-6">
+                  {item.description}
+                </p>
+                <span class="text-primary mt-4 inline-flex items-center gap-1 text-sm font-semibold">
+                  Read guide{" "}
+                  <ArrowRight
+                    className="size-4 transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  />
+                </span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+      <div
+        class="border-destructive/30 bg-destructive/6 grid gap-5 rounded-2xl border p-7 sm:grid-cols-[auto_1fr] sm:p-9"
+      >
+        <ShieldCheck className="text-destructive size-9" aria-hidden="true" />
+        <div>
+          <h2 class="text-xl font-semibold">Not a personal authenticator</h2>
+          <p class="text-muted-foreground mt-2 max-w-4xl leading-7">
+            Local TOTP is designed only for synthetic test and staging
+            credentials on a trusted developer machine. Do not store personal or
+            production MFA seeds. Encryption protects copied files, not a
+            compromised host, browser, container administrator, or live process
+            memory.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero-grid {
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in oklch, var(--border) 55%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--border) 55%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 46px 46px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+</style>
