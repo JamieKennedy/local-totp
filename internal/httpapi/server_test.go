@@ -20,6 +20,7 @@ import (
 
 const (
 	syntheticPassword = "synthetic-test-password"
+	// This is the public SHA-1 test vector from RFC 6238 Appendix B, not a credential.
 	rfc6238SHA1Secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 )
 
