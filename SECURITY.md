@@ -8,7 +8,9 @@ Encryption protects copied database files and backups. It does not protect again
 
 ## Reporting
 
-Report vulnerabilities privately through GitHub's private vulnerability reporting for `JamieKennedy/local-totp`. Do not open a public issue containing a seed, password, API key, recovery key, backup, or exploit details.
+Report vulnerabilities privately through [GitHub private vulnerability reporting](https://github.com/JamieKennedy/local-totp/security/advisories/new). Do not open a public issue containing a seed, password, API key, recovery key, backup, or exploit details.
+
+The maintainer aims to acknowledge a complete report within seven days. This is a best-effort target, not a service-level agreement. Coordinated disclosure timing will be agreed with the reporter after triage.
 
 ## Logging and fixtures
 
@@ -16,4 +18,6 @@ Passwords, seeds, recovery keys, API keys, `otpauth` URIs, current codes, backup
 
 ## Supported versions
 
-Until 1.0, only the latest tagged release receives security fixes.
+The latest `1.x` release receives security fixes. Older exact releases may be unsupported after a newer patch is available.
+
+Security updates are released as new immutable patch versions. Exact release tags are never moved.

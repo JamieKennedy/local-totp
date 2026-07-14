@@ -1,5 +1,7 @@
 # Contributing
 
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Contributions are accepted under [Apache-2.0](LICENSE), and intentional submissions are treated as Contributions under section 5 of that licence.
+
 ## Toolchain
 
 - Go 1.26.5

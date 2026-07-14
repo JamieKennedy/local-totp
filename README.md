@@ -1,5 +1,7 @@
 # Local TOTP
 
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 Local TOTP is a localhost-only workbench for test and staging credentials. It keeps disposable development accounts out of your personal authenticator while providing a dashboard, read-only HTTP interface, and script-friendly CLI.
 
 > Do not use Local TOTP for personal or production MFA credentials. Anyone with administrator access to the host or live process memory is outside the vault threat model.
@@ -76,3 +78,7 @@ npm --prefix site run preview
 ## Releases
 
 Release tags publish private images to `ghcr.io/jamiekennedy/local-totp` and attach cross-platform binaries, checksums, SBOMs, and attestations to a private GitHub Release. Authenticate with GitHub before pulling the private image.
+
+## Project policies
+
+Local TOTP is licensed under [Apache-2.0](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for shipped dependencies, [CONTRIBUTING.md](CONTRIBUTING.md) to contribute, [SUPPORT.md](SUPPORT.md) for support expectations, [GOVERNANCE.md](GOVERNANCE.md) for ownership, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards.
