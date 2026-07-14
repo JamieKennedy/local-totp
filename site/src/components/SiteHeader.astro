@@ -1,0 +1,60 @@
+---
+import { GitHubLogo } from "@/components/GitHubLogo";
+import LogoMark from "@/components/LogoMark.astro";
+import { MobileNavigation } from "@/components/MobileNavigation";
+import LinkButton from "@/components/ui/LinkButton.astro";
+import { documentationNavigation, githubURL } from "@/lib/navigation";
+import { withBase } from "@/lib/paths";
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="bg-background/90 sticky top-0 z-40 border-b backdrop-blur-xl">
+  <div
+    class="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8"
+  >
+    <a
+      href={withBase()}
+      class="focus-visible:ring-ring flex shrink-0 items-center gap-2 rounded-lg font-semibold tracking-tight focus-visible:ring-2 focus-visible:outline-none"
+    >
+      <LogoMark class="size-8" />
+      <span>Local TOTP</span>
+    </a>
+    <nav
+      class="ml-auto hidden items-center gap-1 lg:flex"
+      aria-label="Primary navigation"
+    >
+      {
+        documentationNavigation.map((item) => (
+          <a
+            href={item.href}
+            class:list={[
+              "focus-visible:ring-ring rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+              currentPath === item.href
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+            ]}
+            aria-current={currentPath === item.href ? "page" : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+      <LinkButton
+        variant="ghost"
+        size="icon"
+        class="ml-1"
+        href={githubURL}
+        aria-label="View Local TOTP on GitHub"
+      >
+        <GitHubLogo />
+      </LinkButton>
+    </nav>
+    <div class="ml-auto lg:hidden">
+      <MobileNavigation
+        currentPath={currentPath}
+        client:media="(max-width: 1023px)"
+      />
+    </div>
+  </div>
+</header>

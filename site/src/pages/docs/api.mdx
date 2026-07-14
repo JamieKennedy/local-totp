@@ -1,0 +1,186 @@
+---
+layout: ../../layouts/DocsLayout.astro
+title: Use the HTTP API
+description: Work with the versioned localhost API, read-only bearer keys, browser sessions, CSRF protection, and structured errors.
+eyebrow: API
+---
+
+import Callout from "@/components/Callout.astro";
+import DocTable from "@/components/DocTable.astro";
+import EndpointTable from "@/components/EndpointTable.astro";
+
+## Base URL and versioning
+
+The current HTTP interface is version 1:
+
+```text
+http://localhost:8080/api/v1
+```
+
+All documented API paths below are relative to that base. Health is exposed separately at `GET /healthz`. The machine-readable contract is available from the running server at [`/api/v1/openapi.json`](http://localhost:8080/api/v1/openapi.json) and as the site's [static OpenAPI document](/local-totp/openapi.json).
+
+<Callout title="Loopback is enforced" variant="security">
+  Requests are rejected unless the HTTP Host is `localhost`, `127.0.0.1`, or
+  `::1`. Browser Origin headers must also use one of those loopback hosts.
+</Callout>
+
+## Authentication
+
+Local TOTP has two authentication modes with intentionally different authority.
+
+### Browser session
+
+Setup, unlock, or recovery creates an in-memory session and sets the `local_totp_session` HttpOnly, SameSite=Strict cookie. Successful responses include a CSRF token. State-changing session requests must send both the cookie and `X-CSRF-Token` header.
+
+Example unlock flow using placeholders:
+
+```sh
+curl --fail \
+  --cookie-jar "<SESSION_COOKIE_FILE>" \
+  --header "Content-Type: application/json" \
+  --data '{"password":"<MASTER_PASSWORD>"}' \
+  http://localhost:8080/api/v1/session/unlock
+```
+
+Response shape:
+
+```json
+{
+  "csrfToken": "<CSRF_TOKEN>"
+}
+```
+
+A later state-changing request includes both values:
+
+```sh
+curl --fail \
+  --cookie "<SESSION_COOKIE_FILE>" \
+  --header "X-CSRF-Token: <CSRF_TOKEN>" \
+  --header "Content-Type: application/json" \
+  --data '{"name":"Staging","color":"#64748b"}' \
+  http://localhost:8080/api/v1/groups
+```
+
+Sessions and the unwrapped data key exist only in memory and are revoked when the vault is locked or the process restarts.
+
+### Read-only bearer key
+
+Create a named key in the authenticated Settings interface, then send its one-time plaintext value:
+
+```sh
+curl --fail \
+  --header "Authorization: Bearer <API_KEY>" \
+  http://localhost:8080/api/v1/credentials
+```
+
+Bearer keys can access only credential metadata, groups, and current-code reads. They can never reveal seeds or call management operations.
+
+## Endpoint reference
+
+<EndpointTable />
+
+<Callout title="Canonical contract scope">
+  `api/openapi.json` is canonical and describes every v1 request, success
+  response, authentication requirement, and shared error envelope. Additive
+  fields and endpoints may arrive in 1.x; incompatible changes require a new API
+  version and major release.
+</Callout>
+
+## Common formats
+
+JSON write operations require `Content-Type: application/json`. Successful deletes and several state changes return `204 No Content`. Timestamps use RFC 3339 JSON strings, identifiers are UUID strings, and TOTP codes are strings so leading zeroes are preserved.
+
+### Status
+
+`GET /status` is public and returns lifecycle state:
+
+```json
+{
+  "setup": true,
+  "locked": false,
+  "authenticated": false,
+  "version": "1.0.0",
+  "testOnly": true
+}
+```
+
+An authenticated session response also includes `csrfToken`.
+
+### Credential metadata
+
+`GET /credentials` accepts a session or bearer key. Seed material is not included:
+
+```json
+{
+  "credentials": [
+    {
+      "id": "<CREDENTIAL_UUID>",
+      "issuer": "Example",
+      "account": "developer@example.test",
+      "algorithm": "SHA1",
+      "digits": 6,
+      "period": 30,
+      "favorite": false,
+      "tags": ["synthetic"],
+      "notes": "Test account only",
+      "createdAt": "<RFC3339_TIMESTAMP>",
+      "updatedAt": "<RFC3339_TIMESTAMP>"
+    }
+  ]
+}
+```
+
+### One current code
+
+`GET /credentials/{id}/code` accepts a session or bearer key:
+
+```sh
+curl --fail \
+  --header "Authorization: Bearer <API_KEY>" \
+  http://localhost:8080/api/v1/credentials/<CREDENTIAL_UUID>/code
+```
+
+```json
+{
+  "credentialId": "<CREDENTIAL_UUID>",
+  "code": "<CURRENT_CODE>",
+  "validFrom": "<RFC3339_TIMESTAMP>",
+  "validUntil": "<RFC3339_TIMESTAMP>"
+}
+```
+
+`GET /codes` returns the same code objects under `codes` plus `serverTime`, which clients can use to account for clock skew.
+
+## Error responses
+
+Errors share one envelope:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Authentication failed"
+  }
+}
+```
+
+Common status/code pairs include:
+
+<DocTable label="Common API error responses" width="wide">
+
+| HTTP status | Code                                            | Meaning                                                |
+| ----------- | ----------------------------------------------- | ------------------------------------------------------ |
+| `400`       | `invalid_json`                                  | Body is invalid or contains more than one JSON value.  |
+| `401`       | `unauthorized`                                  | Session or bearer authentication failed.               |
+| `403`       | `csrf_failed`, `invalid_host`, `invalid_origin` | A request failed a transport security check.           |
+| `404`       | `not_found`                                     | The requested record or backup preview does not exist. |
+| `409`       | `conflict`                                      | The operation conflicts with existing state.           |
+| `412`       | `not_setup`                                     | Initial vault setup is required.                       |
+| `415`       | `invalid_content_type`                          | A JSON operation did not use `application/json`.       |
+| `422`       | `validation_failed`                             | Input violates an application rule.                    |
+| `423`       | `vault_locked`                                  | Unlock the vault before retrying.                      |
+| `429`       | `rate_limited`                                  | Login or recovery attempts must pause before retrying. |
+
+</DocTable>
+
+Do not log request bodies, bearer keys, cookies, CSRF tokens, recovery keys, seed-reveal responses, backup contents, or current-code responses.

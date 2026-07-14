@@ -127,6 +127,7 @@ export interface paths {
       };
       cookie?: never;
     };
+    /** @description Returns seed material only to an authenticated browser session. Bearer API keys are never accepted. */
     get: operations["revealCredentialSecret"];
     put?: never;
     post?: never;
@@ -336,6 +337,20 @@ export interface components {
     PasswordInput: {
       password: string;
     };
+    RecoveryInput: {
+      recoveryKey: string;
+      password: string;
+    };
+    Session: {
+      csrfToken: string;
+    };
+    RecoveryKey: {
+      recoveryKey: string;
+    };
+    RecoverySession: {
+      csrfToken: string;
+      recoveryKey: string;
+    };
     CredentialInput: {
       /** @enum {string} */
       source: "manual" | "uri" | "generate";
@@ -344,9 +359,11 @@ export interface components {
       account: string;
       secret?: string;
       algorithm: components["schemas"]["Algorithm"];
-      digits: number;
+      /** @enum {integer} */
+      digits: 6 | 8;
       period: number;
       favorite: boolean;
+      /** Format: uuid */
       groupId?: string;
       tags: string[];
       notes: string;
@@ -357,9 +374,11 @@ export interface components {
       issuer: string;
       account: string;
       algorithm: components["schemas"]["Algorithm"];
-      digits: number;
+      /** @enum {integer} */
+      digits: 6 | 8;
       period: number;
       favorite: boolean;
+      /** Format: uuid */
       groupId?: string;
       tags: string[];
       notes: string;
@@ -368,10 +387,14 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    CredentialsResponse: {
+      credentials: components["schemas"]["Credential"][];
+    };
     /** @enum {string} */
     Algorithm: "SHA1" | "SHA256" | "SHA512";
     Secret: {
       secret: string;
+      /** Format: uri */
       uri: string;
     };
     CurrentCode: {
@@ -388,18 +411,106 @@ export interface components {
       serverTime: string;
       codes: components["schemas"]["CurrentCode"][];
     };
+    GroupInput: {
+      name: string;
+      color: string;
+    };
+    Group: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      color: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    GroupsResponse: {
+      groups: components["schemas"]["Group"][];
+    };
+    APIKeyInput: {
+      name: string;
+    };
+    APIKey: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      lastUsed?: string;
+    };
+    CreatedAPIKey: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      lastUsed?: string;
+      key: string;
+    };
+    APIKeysResponse: {
+      apiKeys: components["schemas"]["APIKey"][];
+    };
+    PasswordChangeInput: {
+      current: string;
+      replacement: string;
+    };
+    BackupPreviewInput: {
+      /** Format: binary */
+      file: string;
+      password: string;
+    };
+    BackupPreview: {
+      /** Format: uuid */
+      id: string;
+      credentials: number;
+      groups: number;
+      duplicates: number;
+      nameConflicts: number;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    BackupApplyInput: {
+      /** @enum {string} */
+      mode: "merge" | "replace";
+    };
     Error: {
       error: {
-        code: string;
+        /** @enum {string} */
+        code:
+          | "invalid_json"
+          | "invalid_content_type"
+          | "unauthorized"
+          | "csrf_failed"
+          | "invalid_host"
+          | "invalid_origin"
+          | "not_found"
+          | "conflict"
+          | "not_setup"
+          | "validation_failed"
+          | "vault_locked"
+          | "rate_limited";
         message: string;
-        details?: unknown;
       };
     };
   };
   responses: {
-    /** @description Error */
+    /** @description Request failed */
     Error: {
       headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Unlock or recovery attempts are temporarily rate limited */
+    RateLimited: {
+      headers: {
+        /** @description Seconds before retrying */
+        "Retry-After"?: number;
         [name: string]: unknown;
       };
       content: {
@@ -409,9 +520,30 @@ export interface components {
   };
   parameters: {
     ID: string;
+    /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+    CSRFToken: string;
   };
-  requestBodies: never;
-  headers: never;
+  requestBodies: {
+    Password: {
+      content: {
+        "application/json": components["schemas"]["PasswordInput"];
+      };
+    };
+    Credential: {
+      content: {
+        "application/json": components["schemas"]["CredentialInput"];
+      };
+    };
+    Group: {
+      content: {
+        "application/json": components["schemas"]["GroupInput"];
+      };
+    };
+  };
+  headers: {
+    /** @description HttpOnly, SameSite=Strict browser session cookie */
+    SessionCookie: string;
+  };
   pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -425,7 +557,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Lifecycle status */
+      /** @description Lifecycle and session status */
       200: {
         headers: {
           [name: string]: unknown;
@@ -434,6 +566,7 @@ export interface operations {
           "application/json": components["schemas"]["Status"];
         };
       };
+      default: components["responses"]["Error"];
     };
   };
   setupVault: {
@@ -443,20 +576,19 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PasswordInput"];
-      };
-    };
+    requestBody: components["requestBodies"]["Password"];
     responses: {
-      /** @description Vault created */
+      /** @description Vault created; recovery key is returned once */
       201: {
         headers: {
+          "Set-Cookie": components["headers"]["SessionCookie"];
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["RecoverySession"];
+        };
       };
-      422: components["responses"]["Error"];
+      default: components["responses"]["Error"];
     };
   };
   unlockVault: {
@@ -466,38 +598,42 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PasswordInput"];
-      };
-    };
+    requestBody: components["requestBodies"]["Password"];
     responses: {
-      /** @description Unlocked */
+      /** @description Vault unlocked */
       200: {
         headers: {
+          "Set-Cookie": components["headers"]["SessionCookie"];
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["Session"];
+        };
       };
-      401: components["responses"]["Error"];
+      429: components["responses"]["RateLimited"];
+      default: components["responses"]["Error"];
     };
   };
   lockVault: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Locked */
+      /** @description Vault locked and all sessions revoked */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
+      default: components["responses"]["Error"];
     };
   };
   recoverVault: {
@@ -507,15 +643,24 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecoveryInput"];
+      };
+    };
     responses: {
-      /** @description Recovered with a rotated recovery key */
+      /** @description Password reset and recovery key rotated */
       200: {
         headers: {
+          "Set-Cookie": components["headers"]["SessionCookie"];
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["RecoverySession"];
+        };
       };
+      429: components["responses"]["RateLimited"];
+      default: components["responses"]["Error"];
     };
   };
   listCredentials: {
@@ -527,33 +672,31 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Credential metadata */
+      /** @description Seed-free credential metadata */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": {
-            credentials: components["schemas"]["Credential"][];
-          };
+          "application/json": components["schemas"]["CredentialsResponse"];
         };
       };
+      default: components["responses"]["Error"];
     };
   };
   createCredential: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CredentialInput"];
-      };
-    };
+    requestBody: components["requestBodies"]["Credential"];
     responses: {
-      /** @description Created */
+      /** @description Credential created */
       201: {
         headers: {
           [name: string]: unknown;
@@ -562,12 +705,16 @@ export interface operations {
           "application/json": components["schemas"]["Credential"];
         };
       };
+      default: components["responses"]["Error"];
     };
   };
   deleteCredential: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path: {
         id: components["parameters"]["ID"];
       };
@@ -575,33 +722,40 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Deleted */
+      /** @description Credential deleted */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
+      default: components["responses"]["Error"];
     };
   };
   updateCredential: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path: {
         id: components["parameters"]["ID"];
       };
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: components["requestBodies"]["Credential"];
     responses: {
-      /** @description Updated */
+      /** @description Credential updated */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["Credential"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   revealCredentialSecret: {
@@ -624,6 +778,7 @@ export interface operations {
           "application/json": components["schemas"]["Secret"];
         };
       };
+      default: components["responses"]["Error"];
     };
   };
   getCredentialCode: {
@@ -637,7 +792,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Current code */
+      /** @description Current code and server-derived validity interval */
       200: {
         headers: {
           [name: string]: unknown;
@@ -646,6 +801,7 @@ export interface operations {
           "application/json": components["schemas"]["CurrentCode"];
         };
       };
+      default: components["responses"]["Error"];
     };
   };
   getCodes: {
@@ -657,7 +813,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description All current codes */
+      /** @description All current codes generated at one server instant */
       200: {
         headers: {
           [name: string]: unknown;
@@ -666,6 +822,7 @@ export interface operations {
           "application/json": components["schemas"]["CodesResponse"];
         };
       };
+      default: components["responses"]["Error"];
     };
   };
   listGroups: {
@@ -682,32 +839,44 @@ export interface operations {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["GroupsResponse"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   createGroup: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: components["requestBodies"]["Group"];
     responses: {
-      /** @description Created */
+      /** @description Group created */
       201: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["Group"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   deleteGroup: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path: {
         id: components["parameters"]["ID"];
       };
@@ -715,33 +884,40 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Deleted */
+      /** @description Group deleted */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
+      default: components["responses"]["Error"];
     };
   };
   updateGroup: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path: {
         id: components["parameters"]["ID"];
       };
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: components["requestBodies"]["Group"];
     responses: {
-      /** @description Updated */
+      /** @description Group updated */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["Group"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   listAPIKeys: {
@@ -753,37 +929,53 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Named keys */
+      /** @description Named read-only API keys without plaintext key material */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["APIKeysResponse"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   createAPIKey: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["APIKeyInput"];
+      };
+    };
     responses: {
-      /** @description Created; plaintext returned once */
+      /** @description API key created; plaintext key material is returned once */
       201: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["CreatedAPIKey"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   deleteAPIKey: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path: {
         id: components["parameters"]["ID"];
       };
@@ -791,105 +983,146 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Revoked */
+      /** @description API key revoked */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
+      default: components["responses"]["Error"];
     };
   };
   changePassword: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PasswordChangeInput"];
+      };
+    };
     responses: {
-      /** @description Changed */
+      /** @description Password changed */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
+      default: components["responses"]["Error"];
     };
   };
   rotateRecovery: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Rotated */
+      /** @description Recovery key rotated; new value is returned once */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["RecoveryKey"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   exportBackup: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: components["requestBodies"]["Password"];
     responses: {
-      /** @description Encrypted .ltotp file */
+      /** @description Encrypted `.ltotp` backup */
       200: {
         headers: {
+          /** @description Attachment filename */
+          "Content-Disposition"?: string;
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/vnd.local-totp.backup+json": string;
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   previewBackup: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["BackupPreviewInput"];
+      };
+    };
     responses: {
-      /** @description Import preview */
+      /** @description Validated import preview with a five-minute identifier */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["BackupPreview"];
+        };
       };
+      default: components["responses"]["Error"];
     };
   };
   applyBackup: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /** @description Token returned by setup, unlock, recover, or status for the authenticated session. */
+        "X-CSRF-Token": components["parameters"]["CSRFToken"];
+      };
       path: {
         id: components["parameters"]["ID"];
       };
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BackupApplyInput"];
+      };
+    };
     responses: {
-      /** @description Applied */
+      /** @description Backup applied */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
+      default: components["responses"]["Error"];
     };
   };
 }

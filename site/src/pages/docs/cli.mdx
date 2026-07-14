@@ -1,0 +1,143 @@
+---
+layout: ../../layouts/DocsLayout.astro
+title: Use the Local TOTP CLI
+description: Configure the release binary as a read-only client, inspect metadata, and retrieve test codes safely from scripts.
+eyebrow: CLI
+---
+
+import Callout from "@/components/Callout.astro";
+import DocTable from "@/components/DocTable.astro";
+import { CliTroubleshooting } from "@/components/CliTroubleshooting";
+
+The release archive contains one `local-totp` binary. It can run the server with `serve` or act as a read-only HTTP client with the remaining operational commands.
+
+## Install the binary
+
+Download and verify the archive for your operating system as described in [Installation](/local-totp/docs/installation/). No package-manager installation is currently published.
+
+```sh
+local-totp version
+local-totp help
+```
+
+## Create and configure an API key
+
+1. Unlock the local web interface.
+2. Open **Settings** and create a named API key.
+3. Save the one-time plaintext value in a file readable only by your user.
+4. Configure the CLI with the server URL and file path.
+
+```sh
+local-totp configure \
+  --url http://localhost:8080 \
+  --api-key-file "<API_KEY_FILE>"
+```
+
+`--api-key-file` is required. The command stores an absolute path, not the API key itself, in the operating system's user configuration directory under `local-totp/config.json`. The configuration directory and file are created with user-only permissions where supported.
+
+<Callout title="API keys are deliberately read-only" variant="security">
+  Bearer keys can list credential metadata, groups, and current codes. They
+  cannot reveal seeds, unlock the vault, create or modify records, manage keys,
+  change passwords, or operate backups.
+</Callout>
+
+## Environment overrides
+
+Environment variables override values loaded from `config.json`:
+
+<DocTable label="CLI environment variables">
+
+| Variable                  | Default                 | Meaning                             |
+| ------------------------- | ----------------------- | ----------------------------------- |
+| `LOCAL_TOTP_URL`          | `http://localhost:8080` | Server base URL, without `/api/v1`. |
+| `LOCAL_TOTP_API_KEY_FILE` | unset                   | File containing a named API key.    |
+
+</DocTable>
+
+Example for an ephemeral CI shell:
+
+```sh
+export LOCAL_TOTP_URL="http://localhost:8080"
+export LOCAL_TOTP_API_KEY_FILE="<API_KEY_FILE>"
+local-totp status --json
+```
+
+Do not put the plaintext key directly in either variable.
+
+## Commands and options
+
+<DocTable label="CLI commands and options" width="wide">
+
+| Command                                                 | Authentication | Output and behavior                                                                                  |
+| ------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------- |
+| `local-totp serve`                                      | —              | Starts the local server using server environment variables.                                          |
+| `local-totp configure --url URL --api-key-file PATH`    | —              | Writes client configuration. URL defaults to `http://localhost:8080`; the key-file flag is required. |
+| `local-totp status [--json]`                            | Public         | Prints lifecycle state. This request does not send the bearer key.                                   |
+| `local-totp list [--json]`                              | Bearer         | Lists credential UUIDs and `issuer:account` display names, or full metadata as JSON.                 |
+| `local-totp codes [--json]`                             | Bearer         | Reads all current codes and the measured server time.                                                |
+| `local-totp code <uuid\|exact-issuer/account> [--json]` | Bearer         | Reads one current code. Plain output is only the numeric value.                                      |
+| `local-totp version`                                    | —              | Prints version and source commit.                                                                    |
+| `local-totp help`                                       | —              | Prints the built-in command summary.                                                                 |
+
+</DocTable>
+
+`--json` is supported by `status`, `list`, `codes`, and `code`. There is no global URL or plaintext-key flag; use `configure` or the environment overrides.
+
+## Practical examples
+
+Check whether the server and vault are ready:
+
+```sh
+local-totp status --json
+```
+
+List identifiers without exposing current codes:
+
+```sh
+local-totp list
+```
+
+Output shape:
+
+```text
+<CREDENTIAL_UUID>    Example:developer@example.test
+```
+
+Read one value by exact display name for a script:
+
+```sh
+local-totp code "Example:developer@example.test"
+```
+
+Or avoid name ambiguity by using its UUID:
+
+```sh
+local-totp code "<CREDENTIAL_UUID>" --json
+```
+
+Response shape:
+
+```json
+{
+  "credentialId": "<CREDENTIAL_UUID>",
+  "code": "<CURRENT_CODE>",
+  "validFrom": "<RFC3339_TIMESTAMP>",
+  "validUntil": "<RFC3339_TIMESTAMP>"
+}
+```
+
+Read all values with server timing information:
+
+```sh
+local-totp codes --json
+```
+
+Treat code output as a secret even for synthetic accounts: do not write it to logs, artifacts, command history, or committed fixtures.
+
+## Name resolution
+
+`code` accepts either a UUID or an exact `issuer:account` display name. Matching is case-insensitive. If the issuer is empty, the display name is just the account. When multiple records match, the CLI refuses to choose and prints the candidate UUIDs.
+
+## Troubleshooting
+
+<CliTroubleshooting client:visible />

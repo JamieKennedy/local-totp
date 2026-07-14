@@ -1,12 +1,15 @@
 # Contributing
 
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Contributions are accepted under [Apache-2.0](LICENSE), and intentional submissions are treated as Contributions under section 5 of that licence.
+
 ## Toolchain
 
 - Go 1.26.5
-- Node.js 24 LTS and npm
+- Node.js 24 LTS and npm for both `web/` and `site/`
 - Docker with BuildKit
 
 Install frontend dependencies with `npm --prefix web ci`. Keep `go.sum` and `web/package-lock.json` committed.
+Install documentation-site dependencies with `npm --prefix site ci`. Keep `site/package-lock.json` committed.
 
 ## Verification
 
@@ -21,6 +24,11 @@ npm --prefix web run lint
 npm --prefix web run typecheck
 npm --prefix web run test:coverage
 npm --prefix web run build
+npm --prefix site run format:check
+npm --prefix site run lint
+npm --prefix site run typecheck
+npm --prefix site run build
+npm --prefix site run check:dist
 docker build -t local-totp:verify .
 ```
 
@@ -30,7 +38,7 @@ CI also runs static analysis, vulnerability checks, secret scanning, generated-i
 
 Go code uses `gofmt`, `goimports`, explicit contexts for I/O, wrapped/typed errors, parameterized SQL, and structured redacted logging. Expected runtime failures never panic. Keep interfaces at real seams and prefer private functions inside deep modules.
 
-TypeScript uses strict mode, named exports, functional React, shadcn components, Tailwind CSS, and typed calls through `src/api`. Use TanStack Query for server state, TanStack Form for forms, and TanStack Table for data grids. Do not use `any`, default exports in application source, unhandled promises, or browser persistence for secrets.
+TypeScript uses strict mode, named exports, functional React, shadcn components, and Tailwind CSS. The application uses typed calls through `web/src/api`, TanStack Query for server state, TanStack Form for forms, and TanStack Table for data grids. The static documentation site keeps its shadcn primitives local under `site/src/components/ui` and hydrates only interactive islands. Do not use `any`, default exports in application source, unhandled promises, or browser persistence for secrets.
 
 ## Branches and commits
 

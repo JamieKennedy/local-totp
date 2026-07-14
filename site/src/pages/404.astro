@@ -1,0 +1,28 @@
+---
+import { ArrowLeft } from "lucide-react";
+import LinkButton from "@/components/ui/LinkButton.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { withBase } from "@/lib/paths";
+---
+
+<BaseLayout
+  title="Page not found | Local TOTP"
+  description="The requested Local TOTP documentation page was not found."
+  noindex
+>
+  <section
+    class="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 py-20 text-center"
+  >
+    <p class="text-primary font-mono text-sm font-semibold">404</p>
+    <h1 class="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+      That page is outside the vault.
+    </h1>
+    <p class="text-muted-foreground mt-5 max-w-xl text-lg leading-8">
+      The link may have moved, or the address may be missing the Local TOTP
+      repository path.
+    </p>
+    <LinkButton href={withBase()} class="mt-8">
+      <ArrowLeft aria-hidden="true" /> Return home
+    </LinkButton>
+  </section>
+</BaseLayout>

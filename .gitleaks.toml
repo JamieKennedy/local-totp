@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public RFC 6238 Appendix B SHA-1 test vector"
+regexTarget = "line"
+regexes = [
+  '''rfc6238SHA1Secret\s*=\s*"GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"''',
+]

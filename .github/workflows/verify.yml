@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: 1.26.5
@@ -43,6 +45,8 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
         with:
           node-version: 24.18.0
@@ -60,10 +64,43 @@ jobs:
           path: web/coverage
           retention-days: 7
 
+  documentation-site:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint -- --max-warnings=0
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run check:dist
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run e2e
+      - if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: documentation-playwright-results
+          path: |
+            site/playwright-report
+            site/test-results
+          retention-days: 7
+
   contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
         with:
           node-version: 24.18.0
@@ -72,11 +109,14 @@ jobs:
       - run: npm --prefix web ci
       - run: npm --prefix web run generate:api
       - run: git diff --exit-code -- web/src/api/schema.d.ts
+      - run: node scripts/validate-version.mjs
 
   e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: 1.26.5
@@ -104,12 +144,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       - uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
+          load: true
           push: false
           tags: local-totp:verify
+      - name: Scan production image
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: local-totp:verify
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
 
   security:
     runs-on: ubuntu-latest
@@ -117,6 +168,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: 1.26.5
@@ -124,10 +176,25 @@ jobs:
         with:
           node-version: 24.18.0
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            site/package-lock.json
       - name: Secret scan
         run: |
           go install github.com/zricethezav/gitleaks/v8@v8.27.2
           gitleaks git --redact --no-banner
       - run: npm --prefix web ci
-      - run: npm --prefix web audit --omit=dev --audit-level=high
+      - run: npm --prefix web audit --audit-level=high
+      - run: npm --prefix site ci
+      - run: npm --prefix site audit --audit-level=high
+
+  licenses:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 24.18.0
+      - run: node scripts/generate-third-party-notices.mjs --check

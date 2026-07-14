@@ -69,7 +69,7 @@ func run(args []string) error {
 	}
 	server := httpapi.New(app, version, logger, apispec.Document())
 	httpServer := &http.Server{
-		Addr: envDefault("LOCAL_TOTP_LISTEN_ADDR", ":8080"), Handler: server.Handler(),
+		Addr: listenAddress(), Handler: server.Handler(),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -85,6 +85,10 @@ func run(args []string) error {
 		return err
 	}
 	return nil
+}
+
+func listenAddress() string {
+	return envDefault("LOCAL_TOTP_LISTEN_ADDR", "127.0.0.1:8080")
 }
 
 func envDefault(name, fallback string) string {

@@ -6,6 +6,9 @@ bin
 coverage
 data
 internal/webui/dist
+site/.astro
+site/dist
+site/node_modules
 web/coverage
 web/dist
 web/node_modules

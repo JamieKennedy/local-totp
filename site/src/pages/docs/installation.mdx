@@ -1,0 +1,127 @@
+---
+layout: ../../layouts/DocsLayout.astro
+title: Install and set up Local TOTP
+description: Download a published release, configure the local server, create the encrypted vault, and verify the installation.
+eyebrow: Installation
+---
+
+import Callout from "@/components/Callout.astro";
+import DocTable from "@/components/DocTable.astro";
+import { InstallTabs } from "@/components/InstallTabs";
+
+<Callout title="Use synthetic credentials only" variant="security">
+  Local TOTP is not a personal authenticator. Install it only on a trusted
+  developer machine, and never add personal or production MFA seeds.
+</Callout>
+
+## Prerequisites
+
+Choose either the release binary or the published container:
+
+- **Release binary:** a supported 64-bit Linux, macOS, or Windows machine, plus a browser for initial setup.
+- **Container:** Docker Engine with support for named volumes and loopback port publishing.
+- **Container image:** anonymous access to the public GHCR package; no registry login is required.
+- **Optional release tooling:** the [GitHub CLI](https://cli.github.com/) for authenticated downloads and a platform checksum utility.
+
+The published archives follow these exact patterns:
+
+<DocTable label="Supported release archive names">
+
+| Platform | Architectures    | Archive                                 |
+| -------- | ---------------- | --------------------------------------- |
+| Linux    | `amd64`, `arm64` | `local-totp_1.0.0_linux_<ARCH>.tar.gz`  |
+| macOS    | `amd64`, `arm64` | `local-totp_1.0.0_darwin_<ARCH>.tar.gz` |
+| Windows  | `amd64`, `arm64` | `local-totp_1.0.0_windows_<ARCH>.zip`   |
+
+</DocTable>
+
+Each release also contains `SHA256SUMS`, `local-totp-source.spdx.json`, `LICENSE`, `NOTICE`, and third-party notices.
+
+## Install a release binary
+
+Replace every angle-bracket placeholder before running these commands. `<ARCH>` is `amd64` or `arm64`; `<INSTALL_DIRECTORY>` must already be on your `PATH` or be added afterward.
+
+<InstallTabs client:visible />
+
+Confirm that the installed executable runs:
+
+```sh
+local-totp version
+```
+
+The output includes the release version and source commit.
+
+## Configure the server
+
+The server accepts three environment variables:
+
+<DocTable label="Server environment variables" width="wide">
+
+| Variable                          | Binary default   | Container default | Purpose                                                    |
+| --------------------------------- | ---------------- | ----------------- | ---------------------------------------------------------- |
+| `LOCAL_TOTP_LISTEN_ADDR`          | `127.0.0.1:8080` | `:8080`           | HTTP listen address. Keep access on loopback.              |
+| `LOCAL_TOTP_DATA_DIR`             | `./data`         | `/data`           | Directory containing `local-totp.db`.                      |
+| `LOCAL_TOTP_MASTER_PASSWORD_FILE` | unset            | unset             | Optional file used to unlock an existing vault at startup. |
+
+</DocTable>
+
+For a binary installation, create a private data directory and start the server:
+
+```sh
+mkdir -p "<LOCAL_DATA_DIRECTORY>"
+LOCAL_TOTP_DATA_DIR="<LOCAL_DATA_DIRECTORY>" local-totp serve
+```
+
+On PowerShell, set the variable for the process before starting the server:
+
+```powershell
+$env:LOCAL_TOTP_DATA_DIR = "<LOCAL_DATA_DIRECTORY>"
+local-totp serve
+```
+
+<Callout title="Protect the data directory" variant="warning">
+  The SQLite database is encrypted, but it is still sensitive runtime data. Keep
+  the directory user-readable only, exclude it from backups that are not
+  trusted, and never commit it.
+</Callout>
+
+## Create the vault
+
+1. Open [http://localhost:8080](http://localhost:8080) in a browser.
+2. Create a master password of at least 12 characters.
+3. Save the one-time recovery key somewhere separate and secure.
+4. Add only clearly synthetic test or staging credentials.
+
+Initial setup is interactive. `LOCAL_TOTP_MASTER_PASSWORD_FILE` does **not** create a vault; it only attempts to unlock a vault that has already been set up and is locked.
+
+Local TOTP sends no telemetry and has no cloud service. The browser communicates only with the loopback server you opened.
+
+## Verify the installation
+
+The health endpoint is outside the versioned API and does not require authentication:
+
+```sh
+curl --fail http://localhost:8080/healthz
+```
+
+Expected shape:
+
+```json
+{
+  "status": "ok",
+  "version": "1.0.0"
+}
+```
+
+Then check lifecycle state through either the binary or HTTP interface:
+
+```sh
+local-totp status --json
+curl --fail http://localhost:8080/api/v1/status
+```
+
+After setup, `setup` should be `true`. `authenticated` describes the current browser session, while `locked` describes the in-memory vault state.
+
+## Next step
+
+Use the [deployment guide](/local-totp/docs/deployment/) for the published container, or continue to the [CLI guide](/local-totp/docs/cli/) to configure read-only automation.

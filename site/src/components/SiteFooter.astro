@@ -1,0 +1,58 @@
+---
+import LogoMark from "@/components/LogoMark.astro";
+import {
+  documentationNavigation,
+  githubURL,
+  releasesURL,
+} from "@/lib/navigation";
+import { withBase } from "@/lib/paths";
+
+const year = new Date().getUTCFullYear();
+---
+
+<footer class="border-t">
+  <div
+    class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.3fr_1fr_1fr] lg:px-8"
+  >
+    <div>
+      <a href={withBase()} class="inline-flex items-center gap-2 font-semibold">
+        <LogoMark class="size-7" />
+        Local TOTP
+      </a>
+      <p class="text-muted-foreground mt-4 max-w-sm text-sm leading-6">
+        A localhost-only workbench for synthetic test and staging TOTP
+        credentials.
+      </p>
+    </div>
+    <div>
+      <h2 class="text-sm font-semibold">Documentation</h2>
+      <ul class="text-muted-foreground mt-4 space-y-3 text-sm">
+        {
+          documentationNavigation.map((item) => (
+            <li>
+              <a href={item.href}>{item.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div>
+      <h2 class="text-sm font-semibold">Project</h2>
+      <ul class="text-muted-foreground mt-4 space-y-3 text-sm">
+        <li><a href={githubURL}>GitHub repository</a></li>
+        <li><a href={releasesURL}>Releases</a></li>
+        <li>
+          <a href={`${githubURL}/blob/main/SECURITY.md`}>Security policy</a>
+        </li>
+        <li><a href={withBase("LICENSE.txt")}>Apache-2.0 licence</a></li>
+        <li>
+          <a href={withBase("THIRD_PARTY_NOTICES.txt")}>Third-party notices</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="text-muted-foreground border-t px-4 py-5 text-center text-xs">
+    © {year} Jamie Kennedy. Apache-2.0. Use only with synthetic test and staging
+    credentials.
+  </div>
+</footer>
