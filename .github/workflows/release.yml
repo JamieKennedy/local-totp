@@ -84,7 +84,7 @@ jobs:
           go install github.com/anchore/syft/cmd/syft@v1.29.0
           syft dir:. -o spdx-json=release/local-totp-source.spdx.json
           cp LICENSE NOTICE THIRD_PARTY_NOTICES.md release/
-          (cd release && sha256sum local-totp_* LICENSE NOTICE THIRD_PARTY_NOTICES.md > SHA256SUMS)
+          (cd release && sha256sum local-totp_* local-totp-source.spdx.json LICENSE NOTICE THIRD_PARTY_NOTICES.md > SHA256SUMS)
           node scripts/extract-release-notes.mjs > release-notes.md
           test -s release-notes.md
       - name: Attest release artifacts
