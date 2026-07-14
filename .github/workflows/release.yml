@@ -85,11 +85,7 @@ jobs:
           syft dir:. -o spdx-json=release/local-totp-source.spdx.json
           cp LICENSE NOTICE THIRD_PARTY_NOTICES.md release/
           (cd release && sha256sum local-totp_* LICENSE NOTICE THIRD_PARTY_NOTICES.md > SHA256SUMS)
-          awk -v version="$VERSION" '
-            $0 ~ ("^## \\[" version "\\] - ") { capture = 1; next }
-            capture && /^## \\[/ { exit }
-            capture { print }
-          ' CHANGELOG.md > release-notes.md
+          node scripts/extract-release-notes.mjs > release-notes.md
           test -s release-notes.md
       - name: Attest release artifacts
         if: github.event_name == 'push' && github.event.repository.visibility == 'public'
