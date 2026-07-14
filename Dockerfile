@@ -23,11 +23,13 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     mkdir -p /out/data && touch /out/data/.keep
 
 FROM scratch
-LABEL org.opencontainers.image.source="https://github.com/JamieKennedy/local-totp"
+LABEL org.opencontainers.image.source="https://github.com/JamieKennedy/local-totp" \
+      org.opencontainers.image.licenses="Apache-2.0"
 ENV LOCAL_TOTP_LISTEN_ADDR=:8080 \
     LOCAL_TOTP_DATA_DIR=/data
 COPY --from=build --chown=65532:65532 /out/local-totp /local-totp
 COPY --from=build --chown=65532:65532 /out/data /data
+COPY --chown=65532:65532 LICENSE NOTICE THIRD_PARTY_NOTICES.md /licenses/local-totp/
 WORKDIR /data
 USER 65532:65532
 EXPOSE 8080

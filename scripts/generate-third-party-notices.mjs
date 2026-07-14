@@ -4,6 +4,13 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = join(root, "THIRD_PARTY_NOTICES.md");
+const shippedNpmLicenses = new Set([
+  "(Unlicense OR Apache-2.0)",
+  "0BSD",
+  "Apache-2.0",
+  "ISC",
+  "MIT",
+]);
 
 const goLicenses = new Map([
   ["github.com/dustin/go-humanize", "MIT"],
@@ -34,7 +41,7 @@ function npmPackageName(path) {
   return path.slice(path.lastIndexOf("node_modules/") + "node_modules/".length);
 }
 
-function npmDependencies(lock) {
+function npmDependencies(lock, enforceShippedCompatibility = false) {
   const dependencies = new Map();
   for (const [path, metadata] of Object.entries(lock.packages)) {
     if (!path.includes("node_modules/") || metadata.dev === true) continue;
@@ -42,6 +49,9 @@ function npmDependencies(lock) {
     const license = metadata.license;
     if (typeof license !== "string" || license.length === 0) {
       throw new Error(`missing npm licence metadata for ${name}@${metadata.version}`);
+    }
+    if (enforceShippedCompatibility && !shippedNpmLicenses.has(license)) {
+      throw new Error(`incompatible shipped npm licence ${license} for ${name}@${metadata.version}`);
     }
     dependencies.set(`${name}@${metadata.version}`, {
       name,
@@ -88,7 +98,7 @@ const output = [
   section(
     "Embedded web application",
     "Production npm packages represented in `web/package-lock.json`:",
-    npmDependencies(webLock),
+    npmDependencies(webLock, true),
   ),
   section(
     "Documentation site",
