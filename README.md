@@ -58,7 +58,7 @@ Full guides are available on the [Local TOTP documentation site](https://jamieke
 
 Requirements are Go 1.26.5, Node 24 LTS, npm, and Docker. See [CONTRIBUTING.md](CONTRIBUTING.md) for local commands and repository policy, [ARCHITECTURE.md](ARCHITECTURE.md) for module design, and [SECURITY.md](SECURITY.md) for the threat model.
 
-The backend defaults to `:8080` and `./data` outside the container. During frontend development, Vite proxies `/api` and `/healthz` to the Go server.
+The standalone backend defaults to `127.0.0.1:8080` and `./data`. The container explicitly listens on `:8080`, but its published port must remain bound to host loopback. During frontend development, Vite proxies `/api` and `/healthz` to the Go server.
 
 ### Documentation site
 
