@@ -109,6 +109,7 @@ jobs:
       - run: npm --prefix web ci
       - run: npm --prefix web run generate:api
       - run: git diff --exit-code -- web/src/api/schema.d.ts
+      - run: node scripts/validate-version.mjs
 
   e2e:
     runs-on: ubuntu-latest

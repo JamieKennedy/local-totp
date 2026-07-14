@@ -18,16 +18,16 @@ import Callout from "@/components/Callout.astro";
 Release tags publish Linux `amd64` and `arm64` images to:
 
 ```text
-ghcr.io/jamiekennedy/local-totp:v<VERSION>
+ghcr.io/jamiekennedy/local-totp:v1.0.0
 ```
 
 The package is public and supports anonymous pulls:
 
 ```sh
-docker pull ghcr.io/jamiekennedy/local-totp:v<VERSION>
+docker pull ghcr.io/jamiekennedy/local-totp:v1.0.0
 ```
 
-Prefer an exact `v<VERSION>` tag or recorded digest for reproducible deployments; the release workflow also publishes moving `latest`, major, and major/minor tags.
+Prefer the exact `v1.0.0` tag or recorded digest for reproducible deployments; the release workflow also publishes moving `latest`, major, and major/minor tags.
 
 ## Run with Docker
 
@@ -40,7 +40,7 @@ docker run --detach \
   --restart unless-stopped \
   --publish "127.0.0.1:<HOST_PORT>:8080" \
   --volume local-totp-data:/data \
-  ghcr.io/jamiekennedy/local-totp:v<VERSION>
+  ghcr.io/jamiekennedy/local-totp:v1.0.0
 ```
 
 Replace `<HOST_PORT>` with a free local port such as `8080`, then open `http://localhost:<HOST_PORT>`. The image runs as UID/GID `65532`, stores its database under `/data`, exposes container port `8080`, and contains no shell.
@@ -52,7 +52,7 @@ Save the following as a local Compose file after replacing the placeholders. It 
 ```yaml
 services:
   local-totp:
-    image: ghcr.io/jamiekennedy/local-totp:v<VERSION>
+    image: ghcr.io/jamiekennedy/local-totp:v1.0.0
     restart: unless-stopped
     ports:
       - "127.0.0.1:<HOST_PORT>:8080"
@@ -78,7 +78,7 @@ Complete browser setup first. Then create a user-readable file outside the repos
 ```yaml
 services:
   local-totp:
-    image: ghcr.io/jamiekennedy/local-totp:v<VERSION>
+    image: ghcr.io/jamiekennedy/local-totp:v1.0.0
     restart: unless-stopped
     ports:
       - "127.0.0.1:<HOST_PORT>:8080"

@@ -1,30 +1,30 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const linux = `gh auth login
-gh release download "v<VERSION>" \\
+gh release download "v1.0.0" \\
   --repo JamieKennedy/local-totp \\
-  --pattern "local-totp_<VERSION>_linux_<ARCH>.tar.gz" \\
+  --pattern "local-totp_1.0.0_linux_<ARCH>.tar.gz" \\
   --pattern "SHA256SUMS"
-grep "local-totp_<VERSION>_linux_<ARCH>.tar.gz" SHA256SUMS | sha256sum --check
-tar -xzf "local-totp_<VERSION>_linux_<ARCH>.tar.gz"
-install "local-totp_<VERSION>_linux_<ARCH>/local-totp" "<INSTALL_DIRECTORY>/local-totp"`;
+grep "local-totp_1.0.0_linux_<ARCH>.tar.gz" SHA256SUMS | sha256sum --check
+tar -xzf "local-totp_1.0.0_linux_<ARCH>.tar.gz"
+install "local-totp_1.0.0_linux_<ARCH>/local-totp" "<INSTALL_DIRECTORY>/local-totp"`;
 
 const macOS = `gh auth login
-gh release download "v<VERSION>" \\
+gh release download "v1.0.0" \\
   --repo JamieKennedy/local-totp \\
-  --pattern "local-totp_<VERSION>_darwin_<ARCH>.tar.gz" \\
+  --pattern "local-totp_1.0.0_darwin_<ARCH>.tar.gz" \\
   --pattern "SHA256SUMS"
-grep "local-totp_<VERSION>_darwin_<ARCH>.tar.gz" SHA256SUMS | shasum -a 256 --check
-tar -xzf "local-totp_<VERSION>_darwin_<ARCH>.tar.gz"
-install "local-totp_<VERSION>_darwin_<ARCH>/local-totp" "<INSTALL_DIRECTORY>/local-totp"`;
+grep "local-totp_1.0.0_darwin_<ARCH>.tar.gz" SHA256SUMS | shasum -a 256 --check
+tar -xzf "local-totp_1.0.0_darwin_<ARCH>.tar.gz"
+install "local-totp_1.0.0_darwin_<ARCH>/local-totp" "<INSTALL_DIRECTORY>/local-totp"`;
 
 const windows = `gh auth login
-gh release download "v<VERSION>" --repo JamieKennedy/local-totp --pattern "local-totp_<VERSION>_windows_<ARCH>.zip" --pattern "SHA256SUMS"
-$expected = (Select-String "local-totp_<VERSION>_windows_<ARCH>.zip" SHA256SUMS).Line.Split()[0]
-$actual = (Get-FileHash "local-totp_<VERSION>_windows_<ARCH>.zip" -Algorithm SHA256).Hash.ToLower()
+gh release download "v1.0.0" --repo JamieKennedy/local-totp --pattern "local-totp_1.0.0_windows_<ARCH>.zip" --pattern "SHA256SUMS"
+$expected = (Select-String "local-totp_1.0.0_windows_<ARCH>.zip" SHA256SUMS).Line.Split()[0]
+$actual = (Get-FileHash "local-totp_1.0.0_windows_<ARCH>.zip" -Algorithm SHA256).Hash.ToLower()
 if ($actual -ne $expected) { throw "Checksum mismatch" }
-Expand-Archive "local-totp_<VERSION>_windows_<ARCH>.zip" -DestinationPath .
-Copy-Item "local-totp_<VERSION>_windows_<ARCH>/local-totp.exe" "<INSTALL_DIRECTORY>/local-totp.exe"`;
+Expand-Archive "local-totp_1.0.0_windows_<ARCH>.zip" -DestinationPath .
+Copy-Item "local-totp_1.0.0_windows_<ARCH>/local-totp.exe" "<INSTALL_DIRECTORY>/local-totp.exe"`;
 
 function CodePanel({ children }: { children: string }) {
   return (

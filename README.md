@@ -1,84 +1,125 @@
 # Local TOTP
 
+[![CI](https://github.com/JamieKennedy/local-totp/actions/workflows/ci.yml/badge.svg)](https://github.com/JamieKennedy/local-totp/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/JamieKennedy/local-totp/actions/workflows/codeql.yml/badge.svg)](https://github.com/JamieKennedy/local-totp/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Local TOTP is a localhost-only workbench for test and staging credentials. It keeps disposable development accounts out of your personal authenticator while providing a dashboard, read-only HTTP interface, and script-friendly CLI.
+Local TOTP is a localhost-only workbench for synthetic test and staging TOTP credentials. It keeps disposable development accounts out of a personal authenticator while providing an encrypted dashboard, read-only HTTP v1 API, and script-friendly CLI.
 
-> Do not use Local TOTP for personal or production MFA credentials. Anyone with administrator access to the host or live process memory is outside the vault threat model.
+> Do not use Local TOTP for personal or production MFA credentials. Host administrators, container administrators, malicious local processes, a compromised browser, and live process memory are outside the vault threat model.
 
-## Quick start
+## Stability
+
+Version **1.0.0** is the first stable public release. The documented `/api/v1` interface, environment variables, machine-readable CLI JSON, backup v1 readability, and release artifact naming are backward compatible throughout 1.x. Additive changes may appear in minors; incompatible changes require a new major version. SQLite is internal and migrates forward only.
+
+## Prerequisites
+
+The recommended installation uses the published container image and requires Docker Engine with named volumes. The image supports Linux `amd64` and `arm64`; the web interface is tested in current Playwright Chromium, Firefox, and WebKit engines.
+
+Release binaries are also available for Linux, macOS, and Windows on `amd64` and `arm64`. Initial setup always requires a browser.
+
+## Install with the published container
+
+The GHCR image is public and supports anonymous pulls. Bind the host port to loopback and use an exact version tag:
 
 ```sh
-docker login ghcr.io --username <GITHUB_USERNAME>
 docker volume create local-totp-data
+docker pull ghcr.io/jamiekennedy/local-totp:v1.0.0
 docker run --detach --name local-totp \
   --restart unless-stopped \
-  -p 127.0.0.1:8080:8080 \
-  -v local-totp-data:/data \
-  ghcr.io/jamiekennedy/local-totp:v0.1.0
+  --publish 127.0.0.1:8080:8080 \
+  --volume local-totp-data:/data \
+  ghcr.io/jamiekennedy/local-totp:v1.0.0
 ```
 
-Open <http://localhost:8080>, create a master password, and save the one-time recovery key.
+Open <http://localhost:8080>, create a master password of at least 12 characters, and save the one-time recovery key separately. The image runs without a shell as UID/GID `65532`.
 
-The repository and release package are currently private. Authenticate with an account or token that can read the GHCR package. See the [installation](https://jamiekennedy.github.io/local-totp/docs/installation/) and [deployment](https://jamiekennedy.github.io/local-totp/docs/deployment/) guides for release binaries, checksum verification, version placeholders, and Docker Compose.
+For Compose, use a release image rather than a local build:
 
-For unattended test environments, mount the password in a separate file:
+```yaml
+services:
+  local-totp:
+    image: ghcr.io/jamiekennedy/local-totp:v1.0.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - local-totp-data:/data
 
-```sh
-docker run --detach --name local-totp \
-  --restart unless-stopped \
-  -p 127.0.0.1:8080:8080 \
-  -v local-totp-data:/data \
-  -v /host/path/master-password:/run/secrets/local_totp_master_password:ro \
-  -e LOCAL_TOTP_MASTER_PASSWORD_FILE=/run/secrets/local_totp_master_password \
-  ghcr.io/jamiekennedy/local-totp:v0.1.0
+volumes:
+  local-totp-data:
 ```
 
-The password file unlocks an existing vault; initial setup still happens in the browser.
+See the [installation guide](https://jamiekennedy.github.io/local-totp/docs/installation/) for attested release archives and checksums and the [deployment guide](https://jamiekennedy.github.io/local-totp/docs/deployment/) for Compose, unattended unlock, backup, and volume guidance.
 
-## CLI
+## Configuration
 
-Create a named read-only API key in Settings, place it in a user-readable file, then configure the client:
+| Variable                          | Binary default          | Container default | Purpose                                                         |
+| --------------------------------- | ----------------------- | ----------------- | --------------------------------------------------------------- |
+| `LOCAL_TOTP_LISTEN_ADDR`          | `127.0.0.1:8080`        | `:8080`           | HTTP listen address. Remote deployment is unsupported.          |
+| `LOCAL_TOTP_DATA_DIR`             | `./data`                | `/data`           | Directory containing the encrypted SQLite file.                 |
+| `LOCAL_TOTP_MASTER_PASSWORD_FILE` | unset                   | unset             | Optional file used only to unlock an existing vault at startup. |
+| `LOCAL_TOTP_URL`                  | `http://localhost:8080` | —                 | CLI server URL.                                                 |
+| `LOCAL_TOTP_API_KEY_FILE`         | unset                   | —                 | CLI file containing a named read-only API key.                  |
+
+For unattended test environments, mount the password as a read-only Docker secret; never put it directly in an environment variable or Compose file. Initial vault setup remains interactive.
+
+## CLI usage
+
+Create a named read-only API key in **Settings**, save its one-time value in a user-readable file, then configure the release binary:
 
 ```sh
 local-totp configure --url http://localhost:8080 --api-key-file /path/to/api-key
+local-totp status --json
 local-totp list
 local-totp code "Example:developer@example.test"
 local-totp codes --json
 ```
 
-Run `local-totp help` for all commands. The default output of `code` is only the numeric value, suitable for scripts.
+Bearer keys can read credential metadata, groups, and current codes. They cannot reveal seeds, unlock the vault, modify records, manage settings, or operate backups. See the [CLI reference](https://jamiekennedy.github.io/local-totp/docs/cli/).
 
-Full guides are available on the [Local TOTP documentation site](https://jamiekennedy.github.io/local-totp/):
+## API usage
 
-- [Installation and setup](https://jamiekennedy.github.io/local-totp/docs/installation/)
-- [Container deployment](https://jamiekennedy.github.io/local-totp/docs/deployment/)
-- [CLI reference](https://jamiekennedy.github.io/local-totp/docs/cli/)
-- [HTTP API reference](https://jamiekennedy.github.io/local-totp/docs/api/)
-
-## Development
-
-Requirements are Go 1.26.5, Node 24 LTS, npm, and Docker. See [CONTRIBUTING.md](CONTRIBUTING.md) for local commands and repository policy, [ARCHITECTURE.md](ARCHITECTURE.md) for module design, and [SECURITY.md](SECURITY.md) for the threat model.
-
-The standalone backend defaults to `127.0.0.1:8080` and `./data`. The container explicitly listens on `:8080`, but its published port must remain bound to host loopback. During frontend development, Vite proxies `/api` and `/healthz` to the Go server.
-
-### Documentation site
-
-The fully static Astro site lives under `site/` and uses the Node 24 toolchain:
+The server exposes the canonical contract at <http://localhost:8080/api/v1/openapi.json>. Public lifecycle status needs no key:
 
 ```sh
-npm --prefix site ci
-npm --prefix site run dev
-npm --prefix site run verify
-npm --prefix site run preview
+curl --fail http://localhost:8080/api/v1/status
 ```
 
-`npm --prefix site run build` writes ignored output to `site/dist`. Pushes to `main` that change the site or canonical OpenAPI document publish that output to the generated `gh-pages` branch. After the first deployment creates the branch, configure repository **Settings → Pages** to deploy from `gh-pages` at `/ (root)`, then rerun the workflow. Never commit `site/dist` to `main`.
+Use a named API key for read-only automation:
 
-## Releases
+```sh
+curl --fail \
+  --header "Authorization: Bearer $(cat /path/to/api-key)" \
+  http://localhost:8080/api/v1/credentials
+```
 
-Release tags publish private images to `ghcr.io/jamiekennedy/local-totp` and attach cross-platform binaries, checksums, SBOMs, and attestations to a private GitHub Release. Authenticate with GitHub before pulling the private image.
+Browser management requests use an HttpOnly SameSite cookie and `X-CSRF-Token`; do not automate management by copying browser sessions. See the [HTTP API guide](https://jamiekennedy.github.io/local-totp/docs/api/) and [static OpenAPI document](https://jamiekennedy.github.io/local-totp/openapi.json).
 
-## Project policies
+## Upgrades and rollback
 
-Local TOTP is licensed under [Apache-2.0](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for shipped dependencies, [CONTRIBUTING.md](CONTRIBUTING.md) to contribute, [SUPPORT.md](SUPPORT.md) for support expectations, [GOVERNANCE.md](GOVERNANCE.md) for ownership, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards.
+Before every upgrade, export an encrypted `.ltotp` backup or stop the container and snapshot its volume. Pull a new exact tag, update the Compose image, and recreate the container with the existing volume.
+
+Never run an older binary against a database after a forward migration. Roll back by restoring the pre-upgrade volume or an encrypted backup readable by the older version. Exact tags such as `v1.0.0` are immutable; fixes are released as patches such as `v1.0.1`. Moving tags (`1`, `1.0`, `latest`) may advance only after a successful release.
+
+## Troubleshooting
+
+- Check `curl --fail http://localhost:8080/healthz` and `docker logs local-totp` without posting sensitive output publicly.
+- Confirm the port mapping begins with `127.0.0.1:` and that no other process owns the host port.
+- A locked vault after restart is expected unless an existing vault is unlocked interactively or through a mounted password file.
+- Bind mounts must be writable by UID/GID `65532`; a named Docker volume is recommended.
+- API `401` responses mean the session or bearer key is invalid; `403 csrf_failed` means a browser write omitted the current CSRF token; `423 vault_locked` means the in-memory vault key is unavailable.
+
+Use only synthetic examples in support requests. See [SUPPORT.md](SUPPORT.md) for support expectations.
+
+## Security and privacy
+
+Local TOTP sends no telemetry and has no cloud service. Passwords, seeds, recovery keys, API keys, current codes, backups, and decrypted records must never be logged or committed. Report vulnerabilities privately through the process in [SECURITY.md](SECURITY.md); the maintainer targets acknowledgement within seven days on a best-effort basis.
+
+## Contributing and development
+
+The primary installation path is the published release image above. Source builds are for contributors: read [CONTRIBUTING.md](CONTRIBUTING.md) before changing code, [ARCHITECTURE.md](ARCHITECTURE.md) for module boundaries, [GOVERNANCE.md](GOVERNANCE.md) for ownership, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards.
+
+## Licence and release integrity
+
+Local TOTP is licensed under [Apache-2.0](LICENSE), including an explicit patent grant. [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) accompany source, binary, container, and documentation distributions. Releases include SHA-256 checksums, an SPDX source SBOM, OCI SBOM/provenance, and GitHub attestations.
